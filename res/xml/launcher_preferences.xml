@@ -38,6 +38,12 @@
         android:persistent="true" />
 
     <SwitchPreference
+        android:key="pref_show_predictions"
+        android:title="@string/title_app_suggestions"
+        android:summary="@string/summary_app_suggestions"
+        android:defaultValue="true" />
+
+    <SwitchPreference
         android:key="pref_allowRotation"
         android:title="@string/allow_rotation_title"
         android:summary="@string/allow_rotation_desc"
