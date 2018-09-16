@@ -27,4 +27,8 @@
     <!-- QSB -->
     <string name="label_search">Search</string>
     <string name="label_voice_search">Voice search</string>
+
+    <string name="allow_swipe_down_clearall_title">Quick clear all</string>
+    <string name="allow_swipe_down_clearall_desc">Swipe down in recents view to clear all apps</string>
+
 </resources>
