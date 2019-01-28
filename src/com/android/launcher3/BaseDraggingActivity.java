@@ -21,7 +21,6 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Rect;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.os.StrictMode;
@@ -32,19 +31,16 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.android.launcher3.LauncherSettings.Favorites;
-import com.android.launcher3.badge.BadgeInfo;
 import com.android.launcher3.compat.LauncherAppsCompat;
 import com.android.launcher3.shortcuts.DeepShortcutManager;
 import com.android.launcher3.uioverrides.DisplayRotationListener;
 import com.android.launcher3.uioverrides.WallpaperColorInfo;
-import com.android.launcher3.views.BaseDragLayer;
-import com.android.launcher3.views.ActivityContext;
 
 /**
  * Extension of BaseActivity allowing support for drag-n-drop
  */
 public abstract class BaseDraggingActivity extends BaseActivity
-        implements WallpaperColorInfo.OnChangeListener, ActivityContext {
+        implements WallpaperColorInfo.OnChangeListener {
 
     private static final String TAG = "BaseDraggingActivity";
 
@@ -139,15 +135,9 @@ public abstract class BaseDraggingActivity extends BaseActivity
         return false;
     }
 
-    public abstract BaseDragLayer getDragLayer();
-
     public abstract <T extends View> T getOverviewPanel();
 
     public abstract View getRootView();
-
-    public abstract BadgeInfo getBadgeInfoForItem(ItemInfo info);
-
-    public abstract void invalidateParent(ItemInfo info);
 
     public Rect getViewBounds(View v) {
         int[] pos = new int[2];

@@ -114,6 +114,11 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
     @Nullable
     T getCreatedActivity();
 
+    default boolean isResumed() {
+        BaseDraggingActivity activity = getCreatedActivity();
+        return activity != null && activity.hasBeenResumed();
+    }
+
     @UiThread
     @Nullable
     RecentsView getVisibleRecentsView();
@@ -156,10 +161,21 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
         public void onQuickInteractionStart(Launcher activity, RunningTaskInfo taskInfo,
                 boolean activityVisible, TouchInteractionLog touchInteractionLog) {
             LauncherState fromState = activity.getStateManager().getState();
-            activity.getStateManager().goToState(FAST_OVERVIEW, activityVisible);
-
             QuickScrubController controller = activity.<RecentsView>getOverviewPanel()
                     .getQuickScrubController();
+            boolean isQuickSwitch = controller.isQuickSwitch();
+            boolean animate = activityVisible;
+            if (isQuickSwitch && fromState == FAST_OVERVIEW && !animate) {
+                // We can already be in FAST_OVERVIEW if createActivityController() was called
+                // before us. This could happen, for instance, when launcher is slow to load when
+                // starting quick switch, causing us to call onQuickScrubStart() on the background
+                // thread. In this case, we also hadn't set isQuickSwitch = true before setting
+                // FAST_OVERVIEW, so we need to reapply FAST_OVERVIEW to take that into account.
+                activity.getStateManager().reapplyState();
+            } else {
+                activity.getStateManager().goToState(FAST_OVERVIEW, animate);
+            }
+
             controller.onQuickScrubStart(activityVisible && !fromState.overviewUi, this,
                     touchInteractionLog);
 
@@ -177,7 +193,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
             int topMargin = context.getResources()
                     .getDimensionPixelSize(R.dimen.task_thumbnail_top_margin);
             int paddingTop = targetRect.rect.top - topMargin - dp.getInsets().top;
-            int paddingBottom = dp.availableHeightPx + dp.getInsets().top - targetRect.rect.bottom;
+            int paddingBottom = dp.heightPx - dp.getInsets().bottom - targetRect.rect.bottom;
 
             return FastOverviewState.OVERVIEW_TRANSLATION_FACTOR * (paddingBottom - paddingTop);
         }
@@ -297,9 +313,10 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
                     AnimatorPlaybackController.wrap(anim, transitionLength * 2);
 
             // Since we are changing the start position of the UI, reapply the state, at the end
-            controller.setEndAction(() ->
+            controller.setEndAction(() -> {
                 activity.getStateManager().goToState(
-                        controller.getProgressFraction() > 0.5 ? endState : fromState, false));
+                        controller.getInterpolatedProgress() > 0.5 ? endState : fromState, false);
+            });
             callback.accept(controller);
         }
 
@@ -320,7 +337,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
             float prevRvScale = recentsView.getScaleX();
             float targetRvScale = endState.getOverviewScaleAndTranslationYFactor(launcher)[0];
             SCALE_PROPERTY.set(recentsView, targetRvScale);
-            ClipAnimationHelper clipHelper = new ClipAnimationHelper();
+            ClipAnimationHelper clipHelper = new ClipAnimationHelper(launcher);
             clipHelper.fromTaskThumbnailView(v.getThumbnail(), (RecentsView) v.getParent(), null);
             SCALE_PROPERTY.set(recentsView, prevRvScale);
 
@@ -541,7 +558,8 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
                 public void finish() { }
 
                 @Override
-                public void update(boolean shouldFinish, boolean isLongSwipe, RectF currentRect) { }
+                public void update(boolean shouldFinish, boolean isLongSwipe, RectF currentRect,
+                        float cornerRadius) { }
             };
         }
 
@@ -619,7 +637,8 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
 
         void finish();
 
-        void update(boolean shouldFinish, boolean isLongSwipe, RectF currentRect);
+        void update(boolean shouldFinish, boolean isLongSwipe, RectF currentRect,
+                float cornerRadius);
     }
 
     interface ActivityInitListener {

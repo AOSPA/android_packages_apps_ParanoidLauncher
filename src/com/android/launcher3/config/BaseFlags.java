@@ -58,7 +58,6 @@ abstract class BaseFlags {
     }
 
     public static final boolean IS_DOGFOOD_BUILD = false;
-    public static final String AUTHORITY = "com.android.launcher3.settings".intern();
 
     // When enabled the promise icon is visible in all apps while installation an app.
     public static final boolean LAUNCHER3_PROMISE_APPS_IN_ALL_APPS = false;
@@ -87,14 +86,17 @@ abstract class BaseFlags {
     public static final boolean OVERVIEW_USE_SCREENSHOT_ORIENTATION = true;
 
     public static final ToggleableGlobalSettingsFlag QUICK_SWITCH
-            = new ToggleableGlobalSettingsFlag("navbar_quick_switch_enabled", false,
+            = new ToggleableGlobalSettingsFlag("QUICK_SWITCH", false,
             "Swiping right on the nav bar while in an app switches to the previous app");
 
     /**
      * Feature flag to handle define config changes dynamically instead of killing the process.
      */
     public static final TogglableFlag APPLY_CONFIG_AT_RUNTIME = new TogglableFlag(
-            "APPLY_CONFIG_AT_RUNTIME", false, "Apply display changes dynamically");
+            "APPLY_CONFIG_AT_RUNTIME", true, "Apply display changes dynamically");
+
+    public static final TogglableFlag ENABLE_TASK_STABILIZER = new TogglableFlag(
+            "ENABLE_TASK_STABILIZER", false, "Stable task list across fast task switches");
 
     public static void initialize(Context context) {
         // Avoid the disk read for user builds
@@ -102,12 +104,6 @@ abstract class BaseFlags {
             synchronized (sLock) {
                 for (TogglableFlag flag : sFlags) {
                     flag.initialize(context);
-                }
-            }
-        } else {
-            synchronized (sLock) {
-                for (TogglableFlag flag : sFlags) {
-                    flag.currentValue = flag.defaultValue;
                 }
             }
         }
@@ -139,7 +135,7 @@ abstract class BaseFlags {
                 boolean defaultValue,
                 String description) {
             this.key = checkNotNull(key);
-            this.defaultValue = defaultValue;
+            this.currentValue = this.defaultValue = defaultValue;
             this.description = checkNotNull(description);
             synchronized (sLock) {
                 sFlags.add(this);

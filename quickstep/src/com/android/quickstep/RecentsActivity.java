@@ -44,7 +44,6 @@ import com.android.launcher3.ItemInfo;
 import com.android.launcher3.LauncherAnimationRunner;
 import com.android.launcher3.R;
 import com.android.launcher3.anim.Interpolators;
-import com.android.launcher3.badge.BadgeInfo;
 import com.android.launcher3.uioverrides.UiFactory;
 import com.android.launcher3.util.SystemUiController;
 import com.android.launcher3.util.Themes;
@@ -156,11 +155,6 @@ public class RecentsActivity extends BaseDraggingActivity {
     }
 
     @Override
-    public BadgeInfo getBadgeInfoForItem(ItemInfo info) {
-        return null;
-    }
-
-    @Override
     public ActivityOptions getActivityLaunchOptions(final View v) {
         if (!(v instanceof TaskView)) {
             return null;
@@ -189,7 +183,7 @@ public class RecentsActivity extends BaseDraggingActivity {
             RemoteAnimationTargetCompat[] targets) {
         AnimatorSet target = new AnimatorSet();
         boolean activityClosing = taskIsATargetWithMode(targets, getTaskId(), MODE_CLOSING);
-        ClipAnimationHelper helper = new ClipAnimationHelper();
+        ClipAnimationHelper helper = new ClipAnimationHelper(this);
         target.play(getRecentsWindowAnimator(taskView, !activityClosing, targets, helper)
                 .setDuration(RECENTS_LAUNCH_DURATION));
 
@@ -209,9 +203,6 @@ public class RecentsActivity extends BaseDraggingActivity {
         }
         return target;
     }
-
-    @Override
-    public void invalidateParent(ItemInfo info) { }
 
     @Override
     protected void onStart() {

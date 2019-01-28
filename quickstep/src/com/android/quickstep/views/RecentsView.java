@@ -60,6 +60,7 @@ import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ListView;
+import androidx.annotation.Nullable;
 
 import com.android.launcher3.BaseActivity;
 import com.android.launcher3.DeviceProfile;
@@ -90,8 +91,6 @@ import com.android.systemui.shared.system.TaskStackChangeListener;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;
-
-import androidx.annotation.Nullable;
 
 /**
  * A list of recent tasks.
@@ -485,6 +484,11 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
             final TaskView taskView = (TaskView) getChildAt(pageIndex);
             taskView.bind(task);
         }
+        TaskView runningTaskView = getRunningTaskView();
+        if (runningTaskView != null) {
+            setCurrentPage(indexOfChild(runningTaskView));
+        }
+
         if (mIgnoreResetTaskId != -1 && getTaskView(mIgnoreResetTaskId) != ignoreRestTaskView) {
             // If the taskView mapping is changing, do not preserve the visuals. Since we are
             // mostly preserving the first task, and new taskViews are added to the end, it should
@@ -548,8 +552,8 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
         // Keep this logic in sync with ActivityControlHelper.getTranslationYForQuickScrub.
         mTempRect.top -= mTaskTopMargin;
         setPadding(mTempRect.left - mInsets.left, mTempRect.top - mInsets.top,
-                dp.availableWidthPx + mInsets.left - mTempRect.right,
-                dp.availableHeightPx + mInsets.top - mTempRect.bottom);
+                dp.widthPx - mInsets.right - mTempRect.right,
+                dp.heightPx - mInsets.bottom - mTempRect.bottom);
     }
 
     protected abstract void getTaskSize(DeviceProfile dp, Rect outRect);
@@ -752,7 +756,8 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
         setRunningTaskIconScaledDown(runningTaskIconScaledDown);
         setRunningTaskHidden(runningTaskTileHidden);
 
-        setCurrentPage(0);
+        TaskView tv = getRunningTaskView();
+        setCurrentPage(tv == null ? 0 : indexOfChild(tv));
 
         // Load the tasks (if the loading is already
         mTaskListChangeId = mModel.getTasks(this::applyLoadPlan);
@@ -763,14 +768,14 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
         if (runningTaskView == null) {
             // Launch the first task
             if (getTaskViewCount() > 0) {
-                ((TaskView) getChildAt(0)).launchTask(true /* animate */);
+                getTaskViewAt(0).launchTask(true /* animate */);
             }
         } else {
-            // Get the next launch task
-            int runningTaskIndex = indexOfChild(runningTaskView);
-            int nextTaskIndex = Math.max(0, Math.min(getTaskViewCount() - 1, runningTaskIndex + 1));
-            if (nextTaskIndex < getTaskViewCount()) {
-                ((TaskView) getChildAt(nextTaskIndex)).launchTask(true /* animate */);
+            TaskView nextTaskView = getNextTaskView();
+            if (nextTaskView != null) {
+                nextTaskView.launchTask(true /* animate */);
+            } else {
+                runningTaskView.launchTask(true /* animate */);
             }
         }
     }
@@ -893,8 +898,8 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
 
     public PendingAnimation createTaskDismissAnimation(TaskView taskView, boolean animateTaskView,
             boolean shouldRemoveTask, long duration) {
-        if (FeatureFlags.IS_DOGFOOD_BUILD && mPendingAnimation != null) {
-            throw new IllegalStateException("Another pending animation is still running");
+        if (mPendingAnimation != null) {
+            mPendingAnimation.finish(false, Touch.SWIPE);
         }
         AnimatorSet anim = new AnimatorSet();
         PendingAnimation pendingAnimation = new PendingAnimation(anim);
@@ -1143,6 +1148,19 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
         child.setAlpha(mContentAlpha);
     }
 
+    /**
+     * @return The most recent task that is older than the currently running task. If there is
+     * currently no running task or there is no task older than it, then return null.
+     */
+    @Nullable
+    public TaskView getNextTaskView() {
+        TaskView runningTaskView = getRunningTaskView();
+        if (runningTaskView == null) {
+            return null;
+        }
+        return getTaskViewAt(indexOfChild(runningTaskView) + 1);
+    }
+
     public TaskView getTaskViewAt(int index) {
         View child = getChildAt(index);
         return child == mClearAllButton ? null : (TaskView) child;
@@ -1264,12 +1282,14 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
                         toScale, toTranslationY);
                 scaleAndTranslation[1] = -scaleAndTranslation[1];
                 anim.play(createAnimForChild(adjacentTask, scaleAndTranslation));
+                anim.play(ObjectAnimator.ofFloat(adjacentTask, TaskView.FULLSCREEN_PROGRESS, 1));
             }
             if (taskIndex + 1 < getTaskViewCount()) {
                 TaskView adjacentTask = getTaskViewAt(taskIndex + 1);
                 float[] scaleAndTranslation = getAdjacentScaleAndTranslation(centerTask,
                         toScale, toTranslationY);
                 anim.play(createAnimForChild(adjacentTask, scaleAndTranslation));
+                anim.play(ObjectAnimator.ofFloat(adjacentTask, TaskView.FULLSCREEN_PROGRESS, 1));
             }
         } else {
             // We are launching an adjacent task, so parallax the center and other adjacent task.

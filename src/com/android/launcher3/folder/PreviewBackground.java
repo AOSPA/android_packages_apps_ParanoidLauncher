@@ -23,6 +23,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -38,9 +39,9 @@ import android.view.View;
 
 import com.android.launcher3.CellLayout;
 import com.android.launcher3.DeviceProfile;
-import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
 import com.android.launcher3.util.Themes;
+import com.android.launcher3.views.ActivityContext;
 
 /**
  * This object represents a FolderIcon preview background. It stores drawing / measurement
@@ -62,7 +63,7 @@ public class PreviewBackground {
     float mScale = 1f;
     private float mColorMultiplier = 1f;
     private int mBgColor;
-    private int mBadgeColor;
+    private int mDotColor;
     private float mStrokeWidth;
     private int mStrokeAlpha = MAX_BG_OPACITY;
     private int mShadowAlpha = 255;
@@ -121,20 +122,20 @@ public class PreviewBackground {
                 }
             };
 
-    public void setup(Launcher launcher, View invalidateDelegate,
+    public void setup(Context context, ActivityContext activity, View invalidateDelegate,
                       int availableSpaceX, int topPadding) {
         mInvalidateDelegate = invalidateDelegate;
-        mBgColor = Themes.getAttrColor(launcher, android.R.attr.colorPrimary);
-        mBadgeColor = Themes.getAttrColor(launcher, R.attr.folderBadgeColor);
+        mBgColor = Themes.getAttrColor(context, android.R.attr.colorPrimary);
+        mDotColor = Themes.getAttrColor(context, R.attr.folderDotColor);
 
-        DeviceProfile grid = launcher.getDeviceProfile();
+        DeviceProfile grid = activity.getDeviceProfile();
         previewSize = grid.folderIconSizePx;
 
         basePreviewOffsetX = (availableSpaceX - previewSize) / 2;
         basePreviewOffsetY = topPadding + grid.folderIconOffsetYPx;
 
         // Stroke width is 1dp
-        mStrokeWidth = launcher.getResources().getDisplayMetrics().density;
+        mStrokeWidth = context.getResources().getDisplayMetrics().density;
 
         float radius = getScaledRadius();
         float shadowRadius = radius + mStrokeWidth;
@@ -191,8 +192,8 @@ public class PreviewBackground {
         return setColorAlphaBound(mBgColor, alpha);
     }
 
-    public int getBadgeColor() {
-        return mBadgeColor;
+    public int getDotColor() {
+        return mDotColor;
     }
 
     public void drawBackground(Canvas canvas) {
