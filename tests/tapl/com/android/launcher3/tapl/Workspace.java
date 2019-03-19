@@ -16,6 +16,8 @@
 
 package com.android.launcher3.tapl;
 
+import static com.android.launcher3.TestProtocol.ALL_APPS_STATE_ORDINAL;
+
 import static junit.framework.TestCase.assertTrue;
 
 import android.graphics.Point;
@@ -30,6 +32,7 @@ import androidx.test.uiautomator.UiObject2;
  * Operations on the workspace screen.
  */
 public final class Workspace extends Home {
+    private static final float FLING_SPEED = 3500.0F;
     private final UiObject2 mHotseat;
     private final int ICON_DRAG_SPEED = 2000;
 
@@ -54,7 +57,8 @@ public final class Workspace extends Home {
                 start.x,
                 start.y,
                 start.x,
-                endY
+                endY,
+                ALL_APPS_STATE_ORDINAL
         );
 
         return new AllApps(mLauncher);
@@ -95,7 +99,13 @@ public final class Workspace extends Home {
     public void ensureWorkspaceIsScrollable() {
         final UiObject2 workspace = verifyActiveContainer();
         if (!isWorkspaceScrollable(workspace)) {
-            dragIconToNextScreen(getHotseatAppIcon("Messages"), workspace);
+            dragIconToWorkspace(
+                    mLauncher,
+                    getHotseatAppIcon("Messages"),
+                    new Point(mLauncher.getDevice().getDisplayWidth(),
+                            workspace.getVisibleBounds().centerY()),
+                    ICON_DRAG_SPEED);
+            verifyActiveContainer();
         }
         assertTrue("Home screen workspace didn't become scrollable",
                 isWorkspaceScrollable(workspace));
@@ -111,11 +121,10 @@ public final class Workspace extends Home {
                 mHotseat, AppIcon.getAppIconSelector(appName, mLauncher)));
     }
 
-    private void dragIconToNextScreen(AppIcon app, UiObject2 workspace) {
-        final Point dest = new Point(
-                mLauncher.getDevice().getDisplayWidth(), workspace.getVisibleBounds().centerY());
-        app.getObject().drag(dest, ICON_DRAG_SPEED);
-        verifyActiveContainer();
+    static void dragIconToWorkspace(LauncherInstrumentation launcher, Launchable launchable,
+            Point dest, int icon_drag_speed) {
+        launchable.getObject().drag(dest, icon_drag_speed);
+        launcher.waitUntilGone("drop_target_bar");
     }
 
     /**
@@ -124,7 +133,7 @@ public final class Workspace extends Home {
      */
     public void flingForward() {
         final UiObject2 workspace = verifyActiveContainer();
-        workspace.fling(Direction.RIGHT);
+        workspace.fling(Direction.RIGHT, (int) (FLING_SPEED * mLauncher.getDisplayDensity()));
         mLauncher.waitForIdle();
         verifyActiveContainer();
     }
@@ -135,7 +144,7 @@ public final class Workspace extends Home {
      */
     public void flingBackward() {
         final UiObject2 workspace = verifyActiveContainer();
-        workspace.fling(Direction.LEFT);
+        workspace.fling(Direction.LEFT, (int) (FLING_SPEED * mLauncher.getDisplayDensity()));
         mLauncher.waitForIdle();
         verifyActiveContainer();
     }
@@ -150,5 +159,10 @@ public final class Workspace extends Home {
         verifyActiveContainer();
         mLauncher.getDevice().pressKeyCode(KeyEvent.KEYCODE_W, KeyEvent.META_CTRL_ON);
         return new Widgets(mLauncher);
+    }
+
+    @Override
+    protected int getSwipeLength() {
+        return 100;
     }
 }

@@ -145,7 +145,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
 
 import androidx.annotation.Nullable;
@@ -258,9 +257,8 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
 
     private RotationHelper mRotationHelper;
 
-
     private final Handler mHandler = new Handler();
-    private final Runnable mLogOnDelayedResume = this::logOnDelayedResume;
+    private final Runnable mHandleDeferredResume = this::handleDeferredResume;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -757,6 +755,7 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onStop();
         }
+
         getUserEventDispatcher().logActionCommand(Action.Command.STOP,
                 mStateManager.getState().containerType, -1);
 
@@ -783,11 +782,13 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
         RaceConditionTracker.onEvent(ON_START_EVT, EXIT);
     }
 
-    private void logOnDelayedResume() {
+    private void handleDeferredResume() {
         if (hasBeenResumed()) {
             getUserEventDispatcher().logActionCommand(Action.Command.RESUME,
                     mStateManager.getState().containerType, -1);
             getUserEventDispatcher().startSession();
+
+            UiFactory.onLauncherStateOrResumeChanged(this);
         }
     }
 
@@ -798,8 +799,8 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
         super.onResume();
         TraceHelper.partitionSection("ON_RESUME", "superCall");
 
-        mHandler.removeCallbacks(mLogOnDelayedResume);
-        Utilities.postAsyncCallback(mHandler, mLogOnDelayedResume);
+        mHandler.removeCallbacks(mHandleDeferredResume);
+        Utilities.postAsyncCallback(mHandler, mHandleDeferredResume);
 
         setOnResumeCallback(null);
         // Process any items that were added while Launcher was away.
@@ -813,7 +814,6 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onResume();
         }
-        UiFactory.onLauncherStateOrResumeChanged(this);
 
         TraceHelper.endSection("ON_RESUME");
         RaceConditionTracker.onEvent(ON_RESUME_EVT, EXIT);
@@ -1122,11 +1122,6 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
     public void updateNotificationDots(Predicate<PackageUserKey> updatedDots) {
         mWorkspace.updateNotificationDots(updatedDots);
         mAppsView.getAppsStore().updateNotificationDots(updatedDots);
-
-        PopupContainerWithArrow popup = PopupContainerWithArrow.getOpen(Launcher.this);
-        if (popup != null) {
-            popup.updateNotificationHeader(updatedDots);
-        }
     }
 
     @Override
@@ -2247,10 +2242,6 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
     @Override
     public void bindAllWidgets(final ArrayList<WidgetListRowEntry> allWidgets) {
         mPopupDataProvider.setAllWidgets(allWidgets);
-        AbstractFloatingView topView = AbstractFloatingView.getTopOpenView(this);
-        if (topView != null) {
-            topView.onWidgetsBound();
-        }
     }
 
     /**
