@@ -39,10 +39,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Interpolator;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
-
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherAppState;
@@ -55,9 +51,9 @@ import com.android.launcher3.anim.AnimatorPlaybackController;
 import com.android.launcher3.anim.AnimatorSetBuilder;
 import com.android.launcher3.anim.SpringObjectAnimator;
 import com.android.launcher3.compat.AccessibilityManagerCompat;
-import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.userevent.nano.LauncherLogProto;
 import com.android.launcher3.views.FloatingIconView;
+import com.android.quickstep.SysUINavigationMode.Mode;
 import com.android.quickstep.util.ClipAnimationHelper;
 import com.android.quickstep.util.LayoutUtils;
 import com.android.quickstep.views.RecentsView;
@@ -67,6 +63,10 @@ import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+
 /**
  * {@link ActivityControlHelper} for the in-launcher recents.
  */
@@ -75,7 +75,7 @@ public final class LauncherActivityControllerHelper implements ActivityControlHe
     @Override
     public int getSwipeUpDestinationAndLength(DeviceProfile dp, Context context, Rect outRect) {
         LayoutUtils.calculateLauncherTaskSize(context, dp, outRect);
-        if (dp.isVerticalBarLayout()) {
+        if (dp.isVerticalBarLayout() && SysUINavigationMode.getMode(context) != Mode.NO_BUTTON) {
             Rect targetInsets = dp.getInsets();
             int hotseatInset = dp.isSeascape() ? targetInsets.left : targetInsets.right;
             return dp.hotseatBarSizePx + hotseatInset;
@@ -97,6 +97,14 @@ public final class LauncherActivityControllerHelper implements ActivityControlHe
         DiscoveryBounce.showForOverviewIfNeeded(activity);
     }
 
+    @Override
+    public void onAssistantVisibilityChanged(float visibility) {
+        Launcher launcher = getCreatedActivity();
+        if (launcher != null) {
+            launcher.setQuickSearchBarAlpha(1f - visibility);
+        }
+    }
+
     @NonNull
     @Override
     public HomeAnimationFactory prepareHomeUI(Launcher activity) {
@@ -114,8 +122,7 @@ public final class LauncherActivityControllerHelper implements ActivityControlHe
         final Rect iconLocation = new Rect();
         final FloatingIconView floatingView = workspaceView == null ? null
                 : FloatingIconView.getFloatingIconView(activity, workspaceView,
-                true /* hideOriginal */, false /* useDrawableAsIs */,
-                activity.getDeviceProfile().getAspectRatioWithInsets(), iconLocation, null);
+                true /* hideOriginal */, iconLocation, false /* isOpening */, null /* recycle */);
 
         return new HomeAnimationFactory() {
             @Nullable
@@ -245,8 +252,8 @@ public final class LauncherActivityControllerHelper implements ActivityControlHe
 
         AnimatorSet anim = new AnimatorSet();
         if (!activity.getDeviceProfile().isVerticalBarLayout()
-                && !FeatureFlags.SWIPE_HOME.get()) {
-            // Don't animate the shelf when SWIPE_HOME is true, because we update it atomically.
+                && SysUINavigationMode.getMode(activity) != Mode.NO_BUTTON) {
+            // Don't animate the shelf when the mode is NO_BUTTON, because we update it atomically.
             Animator shiftAnim = createShelfProgressAnim(activity,
                     fromState.getVerticalProgress(activity),
                     endState.getVerticalProgress(activity));
@@ -305,7 +312,7 @@ public final class LauncherActivityControllerHelper implements ActivityControlHe
         // starting to line up the side pages during swipe up)
         float prevRvScale = recentsView.getScaleX();
         float prevRvTransY = recentsView.getTranslationY();
-        float targetRvScale = endState.getOverviewScaleAndTranslationY(launcher)[0];
+        float targetRvScale = endState.getOverviewScaleAndTranslation(launcher).scale;
         SCALE_PROPERTY.set(recentsView, targetRvScale);
         recentsView.setTranslationY(0);
         ClipAnimationHelper clipHelper = new ClipAnimationHelper(launcher);

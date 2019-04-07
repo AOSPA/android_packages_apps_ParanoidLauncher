@@ -37,12 +37,18 @@ import android.util.Base64;
 import com.android.launcher3.AbstractFloatingView;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherState;
+import com.android.launcher3.LauncherState.ScaleAndTranslation;
 import com.android.launcher3.LauncherStateManager;
 import com.android.launcher3.LauncherStateManager.StateHandler;
 import com.android.launcher3.QuickstepAppTransitionManagerImpl;
 import com.android.launcher3.Utilities;
+import com.android.launcher3.config.FeatureFlags;
+import com.android.launcher3.dragndrop.DragLayer;
 import com.android.quickstep.OverviewInteractionState;
 import com.android.quickstep.RecentsModel;
+import com.android.quickstep.SysUINavigationMode;
+import com.android.quickstep.SysUINavigationMode.Mode;
+import com.android.quickstep.SysUINavigationMode.NavigationModeChangeListener;
 import com.android.quickstep.util.RemoteFadeOutAnimationListener;
 import com.android.systemui.shared.system.ActivityCompat;
 
@@ -52,8 +58,11 @@ import java.util.zip.Deflater;
 
 public class UiFactory extends RecentsUiFactory {
 
-    public static void setOnTouchControllersChangedListener(Context context, Runnable listener) {
-        OverviewInteractionState.INSTANCE.get(context).setOnSwipeUpSettingChangedListener(listener);
+    public static Runnable enableLiveTouchControllerChanges(DragLayer dl) {
+        NavigationModeChangeListener listener = m -> dl.recreateControllers();
+        SysUINavigationMode mode = SysUINavigationMode.INSTANCE.get(dl.getContext());
+        mode.addModeChangeListener(listener);
+        return () -> mode.removeModeChangeListener(listener);
     }
 
     public static StateHandler[] getStateHandler(Launcher launcher) {
@@ -89,8 +98,8 @@ public class UiFactory extends RecentsUiFactory {
 
                 @Override
                 public void onStateTransitionComplete(LauncherState finalState) {
-                    boolean swipeUpEnabled = OverviewInteractionState.INSTANCE.get(launcher)
-                            .isSwipeUpGestureEnabled();
+                    boolean swipeUpEnabled = SysUINavigationMode.INSTANCE.get(launcher).getMode()
+                            .hasGestures;
                     LauncherState prevState = launcher.getStateManager().getLastState();
 
                     if (((swipeUpEnabled && finalState == OVERVIEW) || (!swipeUpEnabled
@@ -179,5 +188,14 @@ public class UiFactory extends RecentsUiFactory {
         writer.println(Base64.encodeToString(
                 out.toByteArray(), Base64.NO_WRAP | Base64.NO_PADDING));
         return true;
+    }
+
+    public static ScaleAndTranslation getOverviewScaleAndTranslationForNormalState(Launcher l) {
+        if (SysUINavigationMode.getMode(l) == Mode.NO_BUTTON) {
+            float offscreenTranslationX = l.getDragLayer().getWidth()
+                    - l.getOverviewPanel().getPaddingStart();
+            return new ScaleAndTranslation(1f, offscreenTranslationX, 0f);
+        }
+        return new ScaleAndTranslation(1.1f, 0f, 0f);
     }
 }
