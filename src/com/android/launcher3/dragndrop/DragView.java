@@ -243,7 +243,7 @@ public class DragView extends View implements LauncherStateManager.StateListener
                             nDr = new AdaptiveIconDrawable(new ColorDrawable(Color.BLACK), null);
                         }
                         Utilities.scaleRectAboutCenter(bounds,
-                                li.getNormalizer().getScale(nDr, null, null, null));
+                                li.getNormalizer().getScale(nDr, null));
                     }
                     AdaptiveIconDrawable adaptiveIcon = (AdaptiveIconDrawable) dr;
 

@@ -18,17 +18,14 @@ package com.android.quickstep;
 
 import com.android.launcher3.ui.AbstractLauncherUiTest;
 
-import org.junit.rules.RuleChain;
+import org.junit.Rule;
 import org.junit.rules.TestRule;
 
 /**
  * Base class for all instrumentation tests that deal with Quickstep.
  */
 public abstract class AbstractQuickStepTest extends AbstractLauncherUiTest {
-    @Override
-    protected TestRule getRulesInsideActivityMonitor() {
-        return RuleChain.
-                outerRule(new NavigationModeSwitchRule(mLauncher)).
-                around(super.getRulesInsideActivityMonitor());
-    }
+    @Rule
+    public TestRule mQuickstepOnOffExecutor =
+            new NavigationModeSwitchRule(mLauncher);
 }

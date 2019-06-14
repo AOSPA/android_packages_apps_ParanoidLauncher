@@ -20,7 +20,6 @@ import static com.android.launcher3.Utilities.getBadge;
 import static com.android.launcher3.Utilities.mapToRange;
 import static com.android.launcher3.anim.Interpolators.LINEAR;
 import static com.android.launcher3.config.FeatureFlags.ADAPTIVE_ICON_WINDOW_ANIM;
-import static com.android.launcher3.states.RotationHelper.REQUEST_LOCK;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -77,7 +76,7 @@ import androidx.dynamicanimation.animation.SpringForce;
 public class FloatingIconView extends View implements
         Animator.AnimatorListener, ClipPathView, OnGlobalLayoutListener {
 
-    public static final float SHAPE_PROGRESS_DURATION = 0.10f;
+    public static final float SHAPE_PROGRESS_DURATION = 0.15f;
     private static final int FADE_DURATION_MS = 200;
     private static final Rect sTmpRect = new Rect();
     private static final RectF sTmpRectF = new RectF();
@@ -85,8 +84,8 @@ public class FloatingIconView extends View implements
 
     // We spring the foreground drawable relative to the icon's movement in the DragLayer.
     // We then use these two factor values to scale the movement of the fg within this view.
-    private static final int FG_TRANS_X_FACTOR = 60;
-    private static final int FG_TRANS_Y_FACTOR = 75;
+    private static final int FG_TRANS_X_FACTOR = 80;
+    private static final int FG_TRANS_Y_FACTOR = 100;
 
     private static final FloatPropertyCompat<FloatingIconView> mFgTransYProperty
             = new FloatPropertyCompat<FloatingIconView>("FloatingViewFgTransY") {
@@ -124,7 +123,6 @@ public class FloatingIconView extends View implements
 
     private boolean mIsVerticalBarLayout = false;
     private boolean mIsAdaptiveIcon = false;
-    private boolean mIsOpening;
 
     private @Nullable Drawable mBadge;
     private @Nullable Drawable mForeground;
@@ -179,10 +177,7 @@ public class FloatingIconView extends View implements
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (!mIsOpening) {
-            getViewTreeObserver().addOnGlobalLayoutListener(this);
-            mLauncher.getRotationHelper().setCurrentTransitionRequest(REQUEST_LOCK);
-        }
+        getViewTreeObserver().addOnGlobalLayoutListener(this);
     }
 
     @Override
@@ -232,7 +227,7 @@ public class FloatingIconView extends View implements
 
         mTaskCornerRadius = cornerRadius / scale;
         if (mIsAdaptiveIcon) {
-            if (!isOpening && progress >= shapeProgressStart) {
+            if (!isOpening && shapeRevealProgress >= 0) {
                 if (mRevealAnimator == null) {
                     mRevealAnimator = (ValueAnimator) IconShape.getShape().createRevealAnimator(
                             this, mStartRevealRect, mOutline, mTaskCornerRadius, !isOpening);
@@ -329,7 +324,7 @@ public class FloatingIconView extends View implements
      * - For BubbleTextView, we return the icon bounds.
      */
     private float getLocationBoundsForView(View v, RectF outRect) {
-        boolean ignoreTransform = !mIsOpening;
+        boolean ignoreTransform = true;
         if (v instanceof DeepShortcutView) {
             v = ((DeepShortcutView) v).getBubbleText();
             ignoreTransform = false;
@@ -532,8 +527,7 @@ public class FloatingIconView extends View implements
         bounds.inset(mBlurSizeOutline / 2, mBlurSizeOutline / 2);
 
         try (LauncherIcons li = LauncherIcons.obtain(mLauncher)) {
-            Utilities.scaleRectAboutCenter(bounds, li.getNormalizer().getScale(drawable, null,
-                    null, null));
+            Utilities.scaleRectAboutCenter(bounds, li.getNormalizer().getScale(drawable, null));
         }
 
         bounds.inset(
@@ -630,7 +624,6 @@ public class FloatingIconView extends View implements
         view.recycle();
 
         view.mIsVerticalBarLayout = launcher.getDeviceProfile().isVerticalBarLayout();
-        view.mIsOpening = isOpening;
 
         view.mOriginalIcon = originalView;
         view.mPositionOut = positionOut;
@@ -646,11 +639,6 @@ public class FloatingIconView extends View implements
                 view.setVisibility(VISIBLE);
                 originalView.setVisibility(INVISIBLE);
             };
-            if (!isOpening) {
-                // Hide immediately since the floating view starts at a different location.
-                originalView.setVisibility(INVISIBLE);
-                view.mLoadIconSignal.setOnCancelListener(() -> originalView.setVisibility(VISIBLE));
-            }
             CancellationSignal loadIconSignal = view.mLoadIconSignal;
             new Handler(LauncherModel.getWorkerLooper()).postAtFrontOfQueue(() -> {
                 view.getIcon(originalView, (ItemInfo) originalView.getTag(), isOpening,

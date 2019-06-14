@@ -125,14 +125,7 @@ public final class RecentsActivity extends BaseRecentsActivity {
             @Override
             public void onCreateAnimation(RemoteAnimationTargetCompat[] targetCompats,
                     AnimationResult result) {
-                AnimatorSet anim = composeRecentsLaunchAnimator(taskView, targetCompats);
-                anim.addListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        mFallbackRecentsView.resetViewUI();
-                    }
-                });
-                result.setAnimation(anim);
+                result.setAnimation(composeRecentsLaunchAnimator(taskView, targetCompats));
             }
         };
         return ActivityOptionsCompat.makeRemoteAnimation(new RemoteAnimationAdapterCompat(

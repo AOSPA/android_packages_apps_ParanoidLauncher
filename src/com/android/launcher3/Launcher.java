@@ -29,7 +29,6 @@ import static com.android.launcher3.LauncherState.OVERVIEW_PEEK;
 import static com.android.launcher3.dragndrop.DragLayer.ALPHA_INDEX_LAUNCHER_LOAD;
 import static com.android.launcher3.logging.LoggerUtils.newContainerTarget;
 import static com.android.launcher3.logging.LoggerUtils.newTarget;
-import static com.android.launcher3.states.RotationHelper.REQUEST_NONE;
 import static com.android.launcher3.util.RaceConditionTracker.ENTER;
 import static com.android.launcher3.util.RaceConditionTracker.EXIT;
 
@@ -77,6 +76,8 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.animation.OvershootInterpolator;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+
 import com.android.launcher3.DropTarget.DragObject;
 import com.android.launcher3.accessibility.LauncherAccessibilityDelegate;
 import com.android.launcher3.allapps.AllAppsContainerView;
@@ -109,7 +110,6 @@ import com.android.launcher3.popup.PopupDataProvider;
 import com.android.launcher3.shortcuts.DeepShortcutManager;
 import com.android.launcher3.states.InternalStateHandler;
 import com.android.launcher3.states.RotationHelper;
-import com.android.launcher3.testing.TestProtocol;
 import com.android.launcher3.touch.ItemClickHandler;
 import com.android.launcher3.uioverrides.UiFactory;
 import com.android.launcher3.userevent.nano.LauncherLogProto;
@@ -153,8 +153,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
-
-import androidx.annotation.Nullable;
 
 /**
  * Default launcher application.
@@ -277,7 +275,6 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
 
     final Handler mHandler = new Handler();
     private final Runnable mHandleDeferredResume = this::handleDeferredResume;
-    private boolean mDeferredResumePending;
 
     private float mCurrentAssistantVisibility = 0f;
 
@@ -409,7 +406,6 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
         super.onEnterAnimationComplete();
         UiFactory.onEnterAnimationComplete(this);
         mAllAppsController.highlightWorkTabIfNecessary();
-        mRotationHelper.setCurrentTransitionRequest(REQUEST_NONE);
     }
 
     @Override
@@ -491,7 +487,9 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
             mDeviceProfile = mDeviceProfile.getMultiWindowProfile(this, mwSize);
         }
 
-        if (supportsFakeLandscapeUI() && mDeviceProfile.isVerticalBarLayout()) {
+        if (supportsFakeLandscapeUI()
+                && mDeviceProfile.isVerticalBarLayout()
+                && !mDeviceProfile.isMultiWindowMode) {
             mStableDeviceProfile = mDeviceProfile.inv.portraitProfile;
             mRotationMode = UiFactory.getRotationMode(mDeviceProfile);
         } else {
@@ -499,7 +497,6 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
             mRotationMode = RotationMode.NORMAL;
         }
 
-        mRotationHelper.updateRotationAnimation();
         onDeviceProfileInitiated();
         mModelWriter = mModel.getWriter(getWallpaperDeviceProfile().isVerticalBarLayout(), true);
     }
@@ -879,9 +876,6 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
 
     @Override
     protected void onStart() {
-        if (TestProtocol.sDebugTracing) {
-            Log.d(TestProtocol.NO_OVERVIEW_EVENT_TAG, "Launcher.onStart");
-        }
         RaceConditionTracker.onEvent(ON_START_EVT, ENTER);
         super.onStart();
         if (mLauncherCallbacks != null) {
@@ -893,40 +887,26 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
     }
 
     private void handleDeferredResume() {
-        if (hasBeenResumed() && !mStateManager.getState().disableInteraction) {
+        if (hasBeenResumed()) {
             getUserEventDispatcher().logActionCommand(Action.Command.RESUME,
                     mStateManager.getState().containerType, -1);
             getUserEventDispatcher().startSession();
 
             UiFactory.onLauncherStateOrResumeChanged(this);
             AppLaunchTracker.INSTANCE.get(this).onReturnedToHome();
+            resetPendingActivityResultIfNeeded();
+        }
+    }
 
-            // Process any items that were added while Launcher was away.
-            InstallShortcutReceiver.disableAndFlushInstallQueue(
-                    InstallShortcutReceiver.FLAG_ACTIVITY_PAUSED, this);
-
-            // Refresh shortcuts if the permission changed.
-            mModel.refreshShortcutsIfRequired();
-
-            DiscoveryBounce.showForHomeIfNeeded(this);
-
-            if (mPendingActivityRequestCode != -1 && isInState(NORMAL)) {
-                UiFactory.resetPendingActivityResults(this, mPendingActivityRequestCode);
-            }
-            mDeferredResumePending = false;
-        } else {
-            mDeferredResumePending = true;
+    private void resetPendingActivityResultIfNeeded() {
+        if (hasBeenResumed() && mPendingActivityRequestCode != -1 && isInState(NORMAL)) {
+            UiFactory.resetPendingActivityResults(this, mPendingActivityRequestCode);
         }
     }
 
     protected void onStateSet(LauncherState state) {
         getAppWidgetHost().setResumed(state == LauncherState.NORMAL);
-        if (mDeferredResumePending) {
-            handleDeferredResume();
-        }
-        if (mLauncherCallbacks != null) {
-            mLauncherCallbacks.onStateChanged();
-        }
+        resetPendingActivityResultIfNeeded();
     }
 
     @Override
@@ -940,7 +920,14 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
         Utilities.postAsyncCallback(mHandler, mHandleDeferredResume);
 
         setOnResumeCallback(null);
+        // Process any items that were added while Launcher was away.
+        InstallShortcutReceiver.disableAndFlushInstallQueue(
+                InstallShortcutReceiver.FLAG_ACTIVITY_PAUSED, this);
 
+        // Refresh shortcuts if the permission changed.
+        mModel.refreshShortcutsIfRequired();
+
+        DiscoveryBounce.showForHomeIfNeeded(this);
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onResume();
         }
@@ -1066,7 +1053,7 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
 
         // Setup the drag layer
         mDragLayer.setup(mDragController, mWorkspace);
-        mCancelTouchController = UiFactory.enableLiveUIChanges(this);
+        mCancelTouchController = UiFactory.enableLiveTouchControllerChanges(mDragLayer);
 
         mWorkspace.setup(mDragController);
         // Until the workspace is bound, ensure that we keep the wallpaper offset locked to the
@@ -1795,8 +1782,8 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
 
     public boolean startActivitySafely(View v, Intent intent, ItemInfo item,
             @Nullable String sourceContainer) {
-        if (TestProtocol.sDebugTracing) {
-            android.util.Log.d(TestProtocol.NO_START_TAG,
+        if (com.android.launcher3.TestProtocol.sDebugTracing) {
+            android.util.Log.d(com.android.launcher3.TestProtocol.NO_START_TAG,
                     "startActivitySafely outer");
         }
         boolean success = super.startActivitySafely(v, intent, item, sourceContainer);

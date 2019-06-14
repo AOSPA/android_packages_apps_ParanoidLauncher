@@ -29,7 +29,7 @@ public abstract class GoActivityControlHelper<T extends BaseDraggingActivity> im
     }
 
     @Override
-    public void onSwipeUpToRecentsComplete(T activity) {
+    public void onSwipeUpComplete(T activity) {
         // Go does not support swipe up gesture.
     }
 

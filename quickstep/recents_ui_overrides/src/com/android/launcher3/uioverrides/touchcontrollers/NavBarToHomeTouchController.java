@@ -98,6 +98,9 @@ public class NavBarToHomeTouchController implements TouchController, SwipeDetect
         if (mStartState == OVERVIEW || mStartState == ALL_APPS) {
             return true;
         }
+        if (!mLauncher.hasWindowFocus()) {
+            return true;
+        }
         if (AbstractFloatingView.getTopOpenView(mLauncher) != null) {
             return true;
         }

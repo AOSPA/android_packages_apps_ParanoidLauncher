@@ -130,10 +130,7 @@ public class WorkspaceStateTransitionAnimation {
         propertySetter.setFloat(mWorkspace.getPageIndicator(), View.TRANSLATION_Y,
                 hotseatScaleAndTranslation.translationY, translationInterpolator);
 
-        setScrim(propertySetter, state);
-    }
-
-    public void setScrim(PropertySetter propertySetter, LauncherState state) {
+        // Set scrim
         WorkspaceAndHotseatScrim scrim = mLauncher.getDragLayer().getScrim();
         propertySetter.setFloat(scrim, SCRIM_PROGRESS, state.getWorkspaceScrimAlpha(mLauncher),
                 LINEAR);

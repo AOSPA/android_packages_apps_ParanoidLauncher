@@ -17,7 +17,6 @@ package com.android.quickstep;
 
 import static com.android.launcher3.anim.Interpolators.LINEAR;
 import static com.android.quickstep.SysUINavigationMode.Mode.NO_BUTTON;
-import static com.android.quickstep.fallback.FallbackRecentsView.ZOOM_PROGRESS;
 import static com.android.quickstep.views.RecentsView.CONTENT_ALPHA;
 
 import android.animation.Animator;
@@ -34,7 +33,6 @@ import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.anim.AnimationSuccessListener;
 import com.android.launcher3.anim.AnimatorPlaybackController;
 import com.android.launcher3.userevent.nano.LauncherLogProto;
-import com.android.quickstep.fallback.FallbackRecentsView;
 import com.android.quickstep.util.LayoutUtils;
 import com.android.quickstep.util.RemoteAnimationTargetSet;
 import com.android.quickstep.views.RecentsView;
@@ -72,7 +70,7 @@ public final class FallbackActivityControllerHelper implements
     }
 
     @Override
-    public void onSwipeUpToRecentsComplete(RecentsActivity activity) {
+    public void onSwipeUpComplete(RecentsActivity activity) {
         RecentsView recentsView = activity.getOverviewPanel();
         recentsView.getClearAllButton().setVisibilityAlpha(1);
         recentsView.setDisallowScrollToClearAll(false);
@@ -122,13 +120,10 @@ public final class FallbackActivityControllerHelper implements
             return (transitionLength) -> { };
         }
 
-        FallbackRecentsView rv = activity.getOverviewPanel();
+        RecentsView rv = activity.getOverviewPanel();
         rv.setContentAlpha(0);
         rv.getClearAllButton().setVisibilityAlpha(0);
         rv.setDisallowScrollToClearAll(true);
-
-        boolean fromState = !animateActivity;
-        rv.setInOverviewState(fromState);
 
         return new AnimationFactory() {
 
@@ -146,28 +141,15 @@ public final class FallbackActivityControllerHelper implements
 
             @Override
             public void createActivityController(long transitionLength) {
-                AnimatorSet animatorSet = new AnimatorSet();
-                if (isAnimatingToRecents) {
-                    ObjectAnimator anim = ObjectAnimator.ofFloat(rv, CONTENT_ALPHA, 0, 1);
-                    anim.setDuration(transitionLength).setInterpolator(LINEAR);
-                    animatorSet.play(anim);
+                if (!isAnimatingToRecents) {
+                    return;
                 }
 
-                ObjectAnimator anim = ObjectAnimator.ofFloat(rv, ZOOM_PROGRESS, 1, 0);
+                ObjectAnimator anim = ObjectAnimator.ofFloat(rv, CONTENT_ALPHA, 0, 1);
                 anim.setDuration(transitionLength).setInterpolator(LINEAR);
+                AnimatorSet animatorSet = new AnimatorSet();
                 animatorSet.play(anim);
-
-                AnimatorPlaybackController controller =
-                        AnimatorPlaybackController.wrap(animatorSet, transitionLength);
-
-                // Since we are changing the start position of the UI, reapply the state, at the end
-                controller.setEndAction(() -> {
-                    boolean endState = true;
-                    rv.setInOverviewState(controller.getInterpolatedProgress() > 0.5 ?
-                                    endState : fromState);
-                });
-
-                callback.accept(controller);
+                callback.accept(AnimatorPlaybackController.wrap(animatorSet, transitionLength));
             }
         };
     }

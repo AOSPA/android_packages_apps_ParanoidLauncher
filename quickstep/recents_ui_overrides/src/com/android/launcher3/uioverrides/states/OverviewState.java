@@ -86,7 +86,15 @@ public class OverviewState extends LauncherState {
 
     @Override
     public void onStateEnabled(Launcher launcher) {
+        RecentsView rv = launcher.getOverviewPanel();
+        rv.setOverviewStateEnabled(true);
         AbstractFloatingView.closeAllOpenViews(launcher);
+    }
+
+    @Override
+    public void onStateDisabled(Launcher launcher) {
+        RecentsView rv = launcher.getOverviewPanel();
+        rv.setOverviewStateEnabled(false);
     }
 
     @Override

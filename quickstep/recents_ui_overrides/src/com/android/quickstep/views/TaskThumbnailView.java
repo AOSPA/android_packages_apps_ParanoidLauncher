@@ -98,9 +98,6 @@ public class TaskThumbnailView extends View {
     private float mDimAlphaMultiplier = 1f;
     private float mSaturation = 1f;
 
-    private boolean mOverlayEnabled;
-    private boolean mRotated;
-
     public TaskThumbnailView(Context context) {
         this(context, null);
     }
@@ -195,6 +192,10 @@ public class TaskThumbnailView extends View {
         return 0;
     }
 
+    public TaskOverlay getTaskOverlay() {
+        return mOverlay;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         RectF currentDrawnInsets = mFullscreenParams.mCurrentDrawnInsets;
@@ -254,22 +255,6 @@ public class TaskThumbnailView extends View {
 
     protected TaskView getTaskView() {
         return (TaskView) getParent();
-    }
-
-    public void setOverlayEnabled(boolean overlayEnabled) {
-        if (mOverlayEnabled != overlayEnabled) {
-            mOverlayEnabled = overlayEnabled;
-            updateOverlay();
-        }
-    }
-
-    private void updateOverlay() {
-        // The overlay doesn't really work when the screenshot is rotated, so don't add it.
-        if (mOverlayEnabled && !mRotated && mBitmapShader != null && mThumbnailData != null) {
-            mOverlay.initOverlay(mTask, mThumbnailData, mMatrix);
-        } else {
-            mOverlay.reset();
-        }
     }
 
     private void updateThumbnailPaintFilter() {
@@ -366,8 +351,12 @@ public class TaskThumbnailView extends View {
             mPaint.setShader(mBitmapShader);
         }
 
-        mRotated = isRotated;
-        updateOverlay();
+        if (isRotated) {
+            // The overlay doesn't really work when the screenshot is rotated, so don't add it.
+            mOverlay.reset();
+        } else {
+            mOverlay.setTaskInfo(mTask, mThumbnailData, mMatrix);
+        }
         invalidate();
     }
 
