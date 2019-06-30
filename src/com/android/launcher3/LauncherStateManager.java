@@ -40,6 +40,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.IntDef;
 
@@ -48,6 +49,8 @@ import com.android.launcher3.anim.AnimatorPlaybackController;
 import com.android.launcher3.anim.AnimatorSetBuilder;
 import com.android.launcher3.anim.PropertySetter;
 import com.android.launcher3.anim.PropertySetter.AnimatedPropertySetter;
+import com.android.launcher3.compat.AccessibilityManagerCompat;
+import com.android.launcher3.testing.TestProtocol;
 import com.android.launcher3.uioverrides.UiFactory;
 
 import java.io.PrintWriter;
@@ -447,8 +450,8 @@ public class LauncherStateManager {
     }
 
     private void onStateTransitionStart(LauncherState state) {
-        if (com.android.launcher3.TestProtocol.sDebugTracing) {
-            android.util.Log.d(com.android.launcher3.TestProtocol.NO_DRAG_TAG,
+        if (TestProtocol.sDebugTracing) {
+            android.util.Log.d(TestProtocol.NO_DRAG_TAG,
                     "onStateTransitionStart");
         }
         if (mState != state) {
@@ -473,6 +476,11 @@ public class LauncherStateManager {
         // Only change the stable states after the transitions have finished
         if (state != mCurrentStableState) {
             mLastStableState = state.getHistoryForState(mCurrentStableState);
+            if (TestProtocol.sDebugTracing) {
+                Log.d(TestProtocol.NO_ALLAPPS_EVENT_TAG,
+                        "mCurrentStableState = " + state.getClass().getSimpleName() + " @ " +
+                                android.util.Log.getStackTraceString(new Throwable()));
+            }
             mCurrentStableState = state;
         }
 
@@ -489,6 +497,8 @@ public class LauncherStateManager {
         for (int i = mListeners.size() - 1; i >= 0; i--) {
             mListeners.get(i).onStateTransitionComplete(state);
         }
+
+        AccessibilityManagerCompat.sendStateEventToTest(mLauncher, state.ordinal);
     }
 
     public void onWindowFocusChanged() {
@@ -576,8 +586,8 @@ public class LauncherStateManager {
         private final AnimatorSet mAnim;
 
         public StartAnimRunnable(AnimatorSet anim) {
-            if (com.android.launcher3.TestProtocol.sDebugTracing) {
-                android.util.Log.d(com.android.launcher3.TestProtocol.NO_DRAG_TAG,
+            if (TestProtocol.sDebugTracing) {
+                android.util.Log.d(TestProtocol.NO_DRAG_TAG,
                         "StartAnimRunnable");
             }
             mAnim = anim;
