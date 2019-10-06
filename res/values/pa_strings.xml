@@ -35,4 +35,7 @@
     <string name="icon_pack_add">Install more</string>
     <string name="icon_pack_no_market">There\'s no available app store</string>
 
+    <!-- Folder titles -->
+    <string name="google_folder_title" translatable="false">Google</string>
+
 </resources>
