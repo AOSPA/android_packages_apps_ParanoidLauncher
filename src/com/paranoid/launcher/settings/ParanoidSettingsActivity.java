@@ -23,7 +23,12 @@ import androidx.preference.PreferenceFragment;
 import com.android.launcher3.settings.SettingsActivity;
 import com.android.launcher3.settings.SettingsActivity.LauncherSettingsFragment;
 
+import com.paranoid.launcher.ParanoidLauncherCallbacks;
+import com.paranoid.launcher.ParanoidUtils;
+
 public class ParanoidSettingsActivity extends SettingsActivity {
+
+	public static final String KEY_MINUS_ONE = "pref_enable_minus_one";
 
     /**
      * This fragment shows the Paranoid launcher preferences.
@@ -37,6 +42,11 @@ public class ParanoidSettingsActivity extends SettingsActivity {
         @Override
         protected boolean initPreference(Preference preference) {
             super.initPreference(preference);
+			switch (preference.getKey()) {
+				case KEY_MINUS_ONE:
+                    return ParanoidUtils.hasPackageInstalled(getActivity(),
+                            ParanoidLauncherCallbacks.SEARCH_PACKAGE);
+			}
             return true;
         }
     }
