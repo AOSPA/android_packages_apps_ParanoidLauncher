@@ -18,10 +18,14 @@ package com.paranoid.launcher;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v4.graphics.ColorUtils;
 
 import com.android.launcher3.AppInfo;
 import com.android.launcher3.LauncherCallbacks;
 import com.android.launcher3.settings.SettingsActivity;
+import com.android.launcher3.uioverrides.WallpaperColorInfo;
+import com.android.launcher3.uioverrides.WallpaperColorInfo.OnChangeListener;
+import com.android.launcher3.util.Themes;
 import com.android.launcher3.Utilities;
 
 import com.google.android.libraries.gsa.launcherclient.LauncherClient;
@@ -31,7 +35,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 public class ParanoidLauncherCallbacks implements LauncherCallbacks,
-        SharedPreferences.OnSharedPreferenceChangeListener {
+        SharedPreferences.OnSharedPreferenceChangeListener, OnChangeListener {
     public static final String SEARCH_PACKAGE = "com.google.android.googlequicksearchbox";
 
     private final ParanoidLauncher mLauncher;
@@ -43,6 +47,8 @@ public class ParanoidLauncherCallbacks implements LauncherCallbacks,
     private boolean mResumed;
     private boolean mAlreadyOnHome;
 
+	private final Bundle mUiInformation = new Bundle();
+
     public ParanoidLauncherCallbacks(ParanoidLauncher launcher) {
         mLauncher = launcher;
     }
@@ -53,6 +59,10 @@ public class ParanoidLauncherCallbacks implements LauncherCallbacks,
         mOverlayCallbacks = new OverlayCallbackImpl(mLauncher);
         mLauncherClient = new LauncherClient(mLauncher, mOverlayCallbacks, getClientOptions(prefs));
         mOverlayCallbacks.setClient(mLauncherClient);
+		mUiInformation.putInt("system_ui_visibility", mLauncher.getWindow().getDecorView().getSystemUiVisibility());
+        WallpaperColorInfo instance = WallpaperColorInfo.getInstance(mLauncher);
+        instance.addOnChangeListener(this);
+        onExtractedColorsChanged(instance);
         prefs.registerOnSharedPreferenceChangeListener(this);
     }
 
@@ -93,6 +103,7 @@ public class ParanoidLauncherCallbacks implements LauncherCallbacks,
         mLauncherClient.onDestroy();
 
         Utilities.getPrefs(mLauncher).unregisterOnSharedPreferenceChangeListener(this);
+		WallpaperColorInfo.getInstance(mLauncher).removeOnChangeListener(this);
     }
 
     @Override
@@ -157,6 +168,15 @@ public class ParanoidLauncherCallbacks implements LauncherCallbacks,
         }
     }
 
+	@Override
+    public void onExtractedColorsChanged(WallpaperColorInfo wallpaperColorInfo) {
+        int alpha = mLauncher.getResources().getInteger(R.integer.extracted_color_gradient_alpha);
+        mUiInformation.putInt("background_color_hint", primaryColor(wallpaperColorInfo, mLauncher, alpha));
+        mUiInformation.putInt("background_secondary_color_hint", secondaryColor(wallpaperColorInfo, mLauncher, alpha));
+        mUiInformation.putBoolean("is_background_dark", Themes.getAttrBoolean(mLauncher, R.attr.isMainColorDark));
+        mLauncherClient.redraw(mUiInformation);
+    }
+
     private LauncherClient.ClientOptions getClientOptions(SharedPreferences prefs) {
         boolean hasPackage = ParanoidUtils.hasPackageInstalled(mLauncher, SEARCH_PACKAGE);
         boolean isEnabled = prefs.getBoolean(SettingsActivity.MINUS_ONE_KEY, true);
@@ -164,5 +184,17 @@ public class ParanoidLauncherCallbacks implements LauncherCallbacks,
                 true, /* enableHotword */
                 true /* enablePrewarming */
         );
+    }
+
+	public static int primaryColor(WallpaperColorInfo wallpaperColorInfo, Context context, int alpha) {
+        return compositeAllApps(ColorUtils.setAlphaComponent(wallpaperColorInfo.getMainColor(), alpha), context);
+    }
+
+    public static int secondaryColor(WallpaperColorInfo wallpaperColorInfo, Context context, int alpha) {
+        return compositeAllApps(ColorUtils.setAlphaComponent(wallpaperColorInfo.getSecondaryColor(), alpha), context);
+    }
+
+    public static int compositeAllApps(int color, Context context) {
+        return ColorUtils.compositeColors(Themes.getAttrColor(context, R.attr.allAppsScrimColor), color);
     }
 }
