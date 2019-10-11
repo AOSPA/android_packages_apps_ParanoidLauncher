@@ -88,6 +88,8 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         mLauncher = tryGetLauncher(context);
         mSearchBarController = new AllAppsSearchBarController();
 
+		mAppsView = mLauncher.getAppsView();
+
         mSearchQueryBuilder = new SpannableStringBuilder();
         Selection.setSelection(mSearchQueryBuilder, 0);
 
@@ -152,7 +154,6 @@ public class AppsSearchContainerLayout extends ExtendedEditText
     @Override
     public void initialize(AllAppsContainerView appsView) {
         mApps = appsView.getApps();
-        mAppsView = appsView;
         mSearchBarController.initialize(
                 new DefaultAppSearchAlgorithm(mApps.getApps()), this, mLauncher, this);
     }
