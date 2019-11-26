@@ -163,7 +163,7 @@ public class OverviewState extends LauncherState {
     }
 
     public static float getDefaultSwipeHeight(DeviceProfile dp) {
-        return dp.allAppsCellHeightPx - dp.allAppsIconTextSizePx;
+        return dp.allAppsCellHeightPx + dp.allAppsIconTextSizePx;
     }
 
     @Override
