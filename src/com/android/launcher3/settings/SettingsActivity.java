@@ -104,7 +104,7 @@ public class SettingsActivity extends Activity
             Context c = getApplicationContext();
             int oldValue = c.getPackageManager().getComponentEnabledSetting(cn);
             int newValue;
-            if (Utilities.getPrefs(c).getBoolean(GRID_OPTIONS_PREFERENCE_KEY, false)) {
+            if (Utilities.getPrefs(c).getBoolean(GRID_OPTIONS_PREFERENCE_KEY, true)) {
                 newValue = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
             } else {
                 newValue = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
@@ -241,9 +241,7 @@ public class SettingsActivity extends Activity
                     return ParanoidUtils.hasPackageInstalled(getActivity(),
                             ParanoidLauncherCallbacks.SEARCH_PACKAGE);
                 case GRID_OPTIONS_PREFERENCE_KEY:
-                    return Utilities.isDevelopersOptionsEnabled(getContext()) &&
-                            Utilities.IS_DEBUG_DEVICE &&
-                            Utilities.existsStyleWallpapers(getContext());
+                    return Utilities.existsStyleWallpapers(getContext());
             }
 
             return true;
