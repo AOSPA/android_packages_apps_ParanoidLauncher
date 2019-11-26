@@ -180,7 +180,7 @@ public class AllAppsGridAdapter extends RecyclerView.Adapter<AllAppsGridAdapter.
     private final GridLayoutManager mGridLayoutMgr;
     private final GridSpanSizer mGridSizer;
 
-    private final int mAppsPerRow;
+    private int mAppsPerRow;
 
     private BindViewCallback mBindViewCallback;
     private OnFocusChangeListener mIconFocusListener;
@@ -200,7 +200,7 @@ public class AllAppsGridAdapter extends RecyclerView.Adapter<AllAppsGridAdapter.
         mGridLayoutMgr.setSpanSizeLookup(mGridSizer);
         mLayoutInflater = LayoutInflater.from(launcher);
 
-        mAppsPerRow = mLauncher.getDeviceProfile().inv.numColumns;
+        mAppsPerRow = mLauncher.getDeviceProfile().inv.numColumnsAllApps;
         mGridLayoutMgr.setSpanCount(mAppsPerRow);
     }
 
@@ -336,4 +336,8 @@ public class AllAppsGridAdapter extends RecyclerView.Adapter<AllAppsGridAdapter.
         return item.viewType;
     }
 
+    public void onDeviceProfileChanged(int appsPerRow) {
+        mAppsPerRow = appsPerRow;
+        mGridLayoutMgr.setSpanCount(mAppsPerRow);
+    }
 }
