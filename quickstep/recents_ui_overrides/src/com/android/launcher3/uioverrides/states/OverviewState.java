@@ -166,7 +166,7 @@ public class OverviewState extends LauncherState {
     public static float getDefaultSwipeHeight(Context context, DeviceProfile dp) {
         float swipeHeight = dp.allAppsCellHeightPx - dp.allAppsIconTextSizePx;
         if (SysUINavigationMode.getMode(context) == SysUINavigationMode.Mode.NO_BUTTON) {
-            swipeHeight -= dp.getInsets().bottom;
+            swipeHeight += dp.getInsets().bottom;
         }
         return swipeHeight;
     }
