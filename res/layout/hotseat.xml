@@ -21,4 +21,14 @@
     android:layout_height="match_parent"
     android:theme="@style/HomeScreenElementTheme"
     android:importantForAccessibility="no"
-    launcher:containerType="hotseat" />
+    launcher:containerType="hotseat">
+
+    <com.paranoid.launcher.qsb.HotseatQsbView
+        android:layout_gravity="bottom|center"
+        android:id="@+id/search_container_hotseat"
+        android:background="@drawable/bg_qsb_click_feedback"
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/qsb_widget_height"
+        android:contentDescription="@string/label_search" />
+
+</com.android.launcher3.Hotseat>
