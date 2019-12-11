@@ -22,6 +22,12 @@
     <dimen name="dynamic_grid_edge_margin">8dp</dimen>
     <dimen name="dynamic_grid_page_indicator_line_height">1dp</dimen>
     <dimen name="dynamic_grid_icon_drawable_padding">8dp</dimen>
+<<<<<<< HEAD
+=======
+    <dimen name="dynamic_grid_min_page_indicator_size">16dp</dimen>
+    <dimen name="dynamic_grid_workspace_top_padding">8dp</dimen>
+    <dimen name="dynamic_grid_workspace_page_spacing">8dp</dimen>
+>>>>>>> 2097f7bcf... Luna: Add Qsb to hotseat and all apps view
     <!-- Minimum space between workspace and hotseat in spring loaded mode -->
     <dimen name="dynamic_grid_min_spring_loaded_space">8dp</dimen>
 
@@ -29,11 +35,16 @@
     <dimen name="dynamic_grid_cell_padding_x">8dp</dimen>
 
     <!-- Hotseat -->
-    <dimen name="dynamic_grid_hotseat_top_padding">8dp</dimen>
-    <dimen name="dynamic_grid_hotseat_bottom_padding">2dp</dimen>
+    <dimen name="dynamic_grid_hotseat_top_padding">0dp</dimen>
+    <dimen name="dynamic_grid_hotseat_bottom_padding">72dp</dimen>
     <!-- Extra bottom padding for non-tall devices. -->
+<<<<<<< HEAD
     <dimen name="dynamic_grid_hotseat_bottom_non_tall_padding">0dp</dimen>
     <dimen name="dynamic_grid_hotseat_extra_vertical_size">34dp</dimen>
+=======
+    <dimen name="dynamic_grid_hotseat_bottom_non_tall_padding">15dp</dimen>
+    <dimen name="dynamic_grid_hotseat_size">70dp</dimen>
+>>>>>>> 2097f7bcf... Luna: Add Qsb to hotseat and all apps view
     <dimen name="dynamic_grid_hotseat_side_padding">0dp</dimen>
 
     <!-- Hotseat/all-apps scrim -->
