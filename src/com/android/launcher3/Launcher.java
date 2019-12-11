@@ -231,12 +231,13 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
     private final int[] mTmpAddItemCellCoordinates = new int[2];
 
     @Thunk Hotseat mHotseat;
+    @Thunk Hotseat mHotseatSearchBox;
 
     private DropTargetBar mDropTargetBar;
 
     // Main container view for the all apps screen.
     @Thunk AllAppsContainerView mAppsView;
-    AllAppsTransitionController mAllAppsController;
+    public AllAppsTransitionController mAllAppsController;
 
     // Scrim view for the all apps and overview state.
     @Thunk ScrimView mScrimView;
@@ -1086,6 +1087,7 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
         mWorkspace.initParentViews(mDragLayer);
         mOverviewPanel = findViewById(R.id.overview_panel);
         mHotseat = findViewById(R.id.hotseat);
+        mHotseatSearchBox = findViewById(R.id.search_container_hotseat);
 
         mLauncherView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -1326,6 +1328,10 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
 
     public Hotseat getHotseat() {
         return mHotseat;
+    }
+
+    public View getHotseatSearchBox() {
+        return mHotseatSearchBox;
     }
 
     public <T extends View> T getOverviewPanel() {
