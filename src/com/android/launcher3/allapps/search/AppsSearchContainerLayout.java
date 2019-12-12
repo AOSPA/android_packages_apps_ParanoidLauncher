@@ -52,6 +52,8 @@ import com.android.launcher3.graphics.TintedDrawableSpan;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.views.ActivityContext;
 
+import com.paranoid.launcher.qsb.AllAppsQsbControllerImpl;
+
 import java.util.ArrayList;
 
 /**
@@ -64,11 +66,12 @@ public class AppsSearchContainerLayout extends ExtendedEditText
 
     private final Launcher mLauncher;
     private final ActivityContext mActivity;
-    private final AllAppsSearchBarController mSearchBarController;
+    public final AllAppsSearchBarController mSearchBarController;
     private final SpannableStringBuilder mSearchQueryBuilder;
 
-    private AlphabeticalAppsList mApps;
-    private AllAppsContainerView mAppsView;
+    public AlphabeticalAppsList mApps;
+    public AllAppsContainerView mAppsView;
+    public AllAppsQsbControllerImpl mAllAppsQsb;
 
     // This value was used to position the QSB. We store it here for translationY animations.
     private final float mFixedTranslationY;
@@ -156,7 +159,7 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         mApps = appsView.getApps();
         mAppsView = appsView;
         mSearchBarController.initialize(
-                new DefaultAppSearchAlgorithm(mApps.getApps()), this, mLauncher, this);
+                new DefaultAppSearchAlgorithm(getContext(), mApps.getApps()), this, mLauncher, this);
     }
 
     @Override
@@ -207,10 +210,14 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         mSearchQueryBuilder.clear();
         mSearchQueryBuilder.clearSpans();
         Selection.setSelection(mSearchQueryBuilder, 0);
+
+        mAllAppsQsb.setKeepDefaultView(true);
         mAppsView.onClearSearchResult();
+        mAllAppsQsb.setKeepDefaultView(false);
     }
 
     private void notifyResultChanged() {
+        mAllAppsQsb.setShadowAlpha(0);
         mAppsView.onSearchResultsChanged();
     }
 
