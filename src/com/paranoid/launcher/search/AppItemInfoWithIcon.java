@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.paranoid.launcher;
+package com.paranoid.launcher.search;
 
-import com.android.launcher3.Launcher;
-import com.android.launcher3.LauncherCallbacks;
+import android.content.Intent;
 
-public class ParanoidLauncher extends Launcher {
+import com.android.launcher3.ItemInfoWithIcon;
+import com.android.launcher3.util.ComponentKey;
 
-    public ParanoidLauncher() {
-        setLauncherCallbacks(new ParanoidLauncherCallbacks(this));
+public class AppItemInfoWithIcon extends ItemInfoWithIcon {
+
+    public Intent mIntent;
+
+    public AppItemInfoWithIcon(ComponentKey componentKey) {
+        mIntent = new Intent("android.intent.action.MAIN").addCategory("android.intent.category.LAUNCHER").setComponent(componentKey.componentName).addFlags(270532608);
+        user = componentKey.user;
     }
 
-    public LauncherCallbacks getLauncherCallbacks() {
-        return mLauncherCallbacks;
+    public Intent getIntent() {
+        return mIntent;
     }
 }
