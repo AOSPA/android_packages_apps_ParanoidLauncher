@@ -17,6 +17,7 @@
 package co.aospa.launcher;
 
 import com.android.launcher3.Launcher;
+import com.android.launcher3.LauncherCallbacks;
 import com.android.systemui.plugins.shared.LauncherOverlayManager;
 
 public class ParanoidLauncher extends Launcher {
@@ -26,4 +27,11 @@ public class ParanoidLauncher extends Launcher {
         return new OverlayCallbackImpl(this);
     }
 
+    public ParanoidLauncher() {
+        setLauncherCallbacks(new ParanoidLauncherCallbacks(this));
+    }
+
+    public LauncherCallbacks getLauncherCallbacks() {
+        return mLauncherCallbacks;
+    }
 }
