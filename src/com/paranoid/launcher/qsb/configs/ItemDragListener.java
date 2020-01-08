@@ -20,7 +20,7 @@ import android.graphics.Rect;
 import android.view.View;
 
 import com.android.launcher3.ItemInfo;
-import com.android.launcher3.InstallShortcutReceiver;
+import com.android.launcher3.InstallShortcutReceiver.PendingInstallShortcutInfo;
 import com.android.launcher3.WorkspaceItemInfo;
 import com.android.launcher3.compat.ShortcutConfigActivityInfo.ShortcutConfigActivityInfoVO;
 import com.android.launcher3.dragndrop.BaseItemDragListener;
@@ -40,7 +40,7 @@ public class ItemDragListener extends BaseItemDragListener {
     public PendingItemDragHelper createDragHelper() {
         PendingAddShortcutInfo tag = new PendingAddShortcutInfo(new ShortcutConfigActivityInfoVO(mActivityInfo) {
             public WorkspaceItemInfo createShortcutInfo() {
-                return InstallShortcutReceiver.fromActivityInfo(mActivityInfo, mLauncher);
+                return (WorkspaceItemInfo) new PendingInstallShortcutInfo(mActivityInfo, mLauncher).getItemInfo().first;
             }
         });
         View view = new View(mLauncher);
