@@ -158,7 +158,7 @@ public class InvariantDeviceProfile {
 
     @TargetApi(23)
     private InvariantDeviceProfile(Context context) {
-        String gridName = Utilities.getPrefs(context).getBoolean(GRID_OPTIONS_PREFERENCE_KEY, false)
+        String gridName = Utilities.getPrefs(context).getBoolean(GRID_OPTIONS_PREFERENCE_KEY, true)
                 ? Utilities.getPrefs(context).getString(KEY_IDP_GRID_NAME, null)
                 : null;
         initGrid(context, gridName);
@@ -351,7 +351,7 @@ public class InvariantDeviceProfile {
         InvariantDeviceProfile oldProfile = new InvariantDeviceProfile(this);
 
         // Re-init grid
-        String gridName = Utilities.getPrefs(context).getBoolean(GRID_OPTIONS_PREFERENCE_KEY, false)
+        String gridName = Utilities.getPrefs(context).getBoolean(GRID_OPTIONS_PREFERENCE_KEY, true)
                 ? Utilities.getPrefs(context).getString(KEY_IDP_GRID_NAME, null)
                 : null;
         initGrid(context, gridName);

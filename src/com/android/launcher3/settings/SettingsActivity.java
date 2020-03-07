@@ -99,6 +99,7 @@ public class SettingsActivity extends Activity
         }
         Utilities.getPrefs(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
     }
+
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (GRID_OPTIONS_PREFERENCE_KEY.equals(key)) {
@@ -108,7 +109,7 @@ public class SettingsActivity extends Activity
             Context c = getApplicationContext();
             int oldValue = c.getPackageManager().getComponentEnabledSetting(cn);
             int newValue;
-            if (Utilities.getPrefs(c).getBoolean(GRID_OPTIONS_PREFERENCE_KEY, false)) {
+            if (Utilities.getPrefs(c).getBoolean(GRID_OPTIONS_PREFERENCE_KEY, true)) {
                 newValue = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
             } else {
                 newValue = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
@@ -244,10 +245,6 @@ public class SettingsActivity extends Activity
                 case MINUS_ONE_KEY:
                     return ParanoidUtils.hasPackageInstalled(getActivity(),
                             ParanoidLauncherCallbacks.SEARCH_PACKAGE);
-                case GRID_OPTIONS_PREFERENCE_KEY:
-                    return Utilities.isDevelopersOptionsEnabled(getContext()) &&
-                            Utilities.IS_DEBUG_DEVICE &&
-                            Utilities.existsStyleWallpapers(getContext());
             }
 
             return true;
