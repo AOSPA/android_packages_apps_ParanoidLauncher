@@ -60,12 +60,6 @@ public class DefaultQsbContainer extends ExtendedEditText implements OnUpdateLis
     }
 
     @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        Launcher.getLauncher(getContext()).getStateManager().goToState(ALL_APPS);
-        super.onLayout(changed, left, top, right, bottom);
-    }
-
-    @Override
     public void onSearchResult(String query, ArrayList<ComponentKey> apps) {
         if (apps != null && getParent() != null) {
             mApps.setOrderedFilter(apps);
@@ -94,5 +88,10 @@ public class DefaultQsbContainer extends ExtendedEditText implements OnUpdateLis
     public void refreshSearchResult() {
         mAllAppsQsb.updateAlpha(0);
         mAppsView.onSearchResultsChanged();
+    }
+
+    public void initKeyboard(Context context) {
+        Launcher.getLauncher(context).getStateManager().goToState(ALL_APPS);
+        showKeyboard();
     }
 }
