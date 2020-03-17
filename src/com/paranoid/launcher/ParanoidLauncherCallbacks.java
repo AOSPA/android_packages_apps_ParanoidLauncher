@@ -30,13 +30,13 @@ import com.android.launcher3.AppInfo;
 import com.android.launcher3.LauncherCallbacks;
 import com.android.launcher3.R;
 import com.android.launcher3.graphics.GridOptionsProvider;
-import com.android.launcher3.settings.SettingsActivity;
 import com.android.launcher3.uioverrides.WallpaperColorInfo;
 import com.android.launcher3.uioverrides.WallpaperColorInfo.OnChangeListener;
 import com.android.launcher3.util.Themes;
 import com.android.launcher3.Utilities;
 
 import com.paranoid.launcher.qsb.QsbAnimationController;
+import com.paranoid.launcher.settings.ParanoidSettingsActivity;
 
 import com.google.android.libraries.gsa.launcherclient.ClientOptions;
 import com.google.android.libraries.gsa.launcherclient.ClientService;
@@ -205,7 +205,7 @@ public class ParanoidLauncherCallbacks implements LauncherCallbacks,
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-        if (SettingsActivity.MINUS_ONE_KEY.equals(key)) {
+        if (ParanoidSettingsActivity.MINUS_ONE_KEY.equals(key)) {
             ClientOptions clientOptions = getClientOptions(prefs);
             if (clientOptions.options != mLauncherClient.mFlags) {
                 mLauncherClient.mFlags = clientOptions.options;
@@ -238,7 +238,7 @@ public class ParanoidLauncherCallbacks implements LauncherCallbacks,
 
     private ClientOptions getClientOptions(SharedPreferences prefs) {
         boolean hasPackage = ParanoidUtils.hasPackageInstalled(mLauncher, SEARCH_PACKAGE);
-        boolean isEnabled = prefs.getBoolean(SettingsActivity.MINUS_ONE_KEY, true);
+        boolean isEnabled = prefs.getBoolean(ParanoidSettingsActivity.MINUS_ONE_KEY, true);
         int canUse = hasPackage && isEnabled ? 1 : 0;
         return new ClientOptions(canUse | 2 | 4 | 8);
     }
