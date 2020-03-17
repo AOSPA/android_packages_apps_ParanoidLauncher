@@ -341,7 +341,6 @@
     <string name="remote_action_failed">Failed: <xliff:g id="what" example="Pause">%1$s</xliff:g></string>
 
     <!-- Icon packs -->
-    <string name="iconPackPackageDefault" translatable="false">""</string>
     <string name="icon_pack">Icon pack</string>
-    <string name="icon_pack_summary">Select a custom icon pack</string>
+    <string name="icon_pack_system_default">System Default</string>
 </resources>

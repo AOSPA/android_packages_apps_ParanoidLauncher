@@ -32,7 +32,7 @@ import com.android.launcher3.R;
 
 public class IconPackPreference extends ListPreference {
 
-    private final PackageManager pm;
+    private PackageManager mPackageManager;
 
     public IconPackPreference(Context context) {
         this(context, null);
@@ -45,27 +45,27 @@ public class IconPackPreference extends ListPreference {
     public IconPackPreference(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         setLayoutResource(R.layout.preference_iconpack);
-        pm = context.getPackageManager();
+        mPackageManager = context.getPackageManager();
         init();
     }
 
     private void init() {
         String currentPack = IconPackProvider.getCurrentIconPack(getContext());
         if (currentPack.isEmpty()) {
-            setNone();
+            setIconPackSummary(getContext().getResources().getString(R.string.icon_pack_system_default));
         } else {
             try {
-                ApplicationInfo info = pm.getApplicationInfo(currentPack, 0);
-                setSummary(info.loadLabel(pm));
+                ApplicationInfo info = mPackageManager.getApplicationInfo(currentPack, 0);
+                setIconPackSummary(info.loadLabel(mPackageManager).toString());
             } catch (PackageManager.NameNotFoundException e) {
-                setNone();
+                setIconPackSummary(getContext().getResources().getString(R.string.icon_pack_system_default));
                 persistString("");
             }
         }
     }
 
-    private void setNone() {
-        setSummary("None");
+    private void setIconPackSummary(String summary) {
+        setSummary(summary);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class IconPackPreference extends ListPreference {
         final Map<String, IconPackInfo> packages = loadAvailableIconPacks();
         String[] packageNames = new String[packages.size()+1];
         CharSequence[] labels = new CharSequence[packages.size()+1];
-        String defaultLabel = "None";
+        String defaultLabel = getContext().getResources().getString(R.string.icon_pack_system_default);
         packageNames[0] = "";
         labels[0] = defaultLabel;
         int i = 1;
@@ -94,12 +94,12 @@ public class IconPackPreference extends ListPreference {
     private Map<String, IconPackInfo> loadAvailableIconPacks() {
         Map<String, IconPackInfo> iconPacks = new HashMap<>();
         List<ResolveInfo> list;
-        list = pm.queryIntentActivities(new Intent("com.novalauncher.THEME"), 0);
-        list.addAll(pm.queryIntentActivities(new Intent("org.adw.launcher.icons.ACTION_PICK_ICON"), 0));
-        list.addAll(pm.queryIntentActivities(new Intent("com.dlto.atom.launcher.THEME"), 0));
-        list.addAll(pm.queryIntentActivities(new Intent("android.intent.action.MAIN").addCategory("com.anddoes.launcher.THEME"), 0));
+        list = mPackageManager.queryIntentActivities(new Intent("com.novalauncher.THEME"), 0);
+        list.addAll(mPackageManager.queryIntentActivities(new Intent("org.adw.launcher.icons.ACTION_PICK_ICON"), 0));
+        list.addAll(mPackageManager.queryIntentActivities(new Intent("com.dlto.atom.launcher.THEME"), 0));
+        list.addAll(mPackageManager.queryIntentActivities(new Intent("android.intent.action.MAIN").addCategory("com.anddoes.launcher.THEME"), 0));
         for (ResolveInfo info : list) {
-            iconPacks.put(info.activityInfo.packageName, new IconPackInfo(info, pm));
+            iconPacks.put(info.activityInfo.packageName, new IconPackInfo(info, mPackageManager));
         }
         return iconPacks;
     }
