@@ -32,11 +32,12 @@ import com.paranoid.launcher.ParanoidUtils;
 public class ParanoidSettingsActivity extends SettingsActivity {
 
     public static final String MINUS_ONE_KEY = "pref_enable_minus_one";
+    public static final String ICON_PACK = "pref_icon_pack";
 
     /**
      * This fragment shows the launcher paranoid preferences.
      */
-    public static class ParanoidLauncherSettingsFragment extends LauncherSettingsFragment {
+    public static class ParanoidLauncherSettingsFragment extends LauncherSettingsFragment implements Preference.OnPreferenceClickListener {
 
         private String mHighLightKey;
         private boolean mPreferenceHighlighted = false;
@@ -66,6 +67,7 @@ public class ParanoidSettingsActivity extends SettingsActivity {
                 if (!initPreference(preference)) {
                     screen.removePreference(preference);
                 }
+                preference.setOnPreferenceClickListener(this);
             }
         }
 
@@ -74,8 +76,23 @@ public class ParanoidSettingsActivity extends SettingsActivity {
                 case MINUS_ONE_KEY:
                     return ParanoidUtils.hasPackageInstalled(getActivity(),
                             ParanoidLauncherCallbacks.SEARCH_PACKAGE);
+                case ICON_PACK:
+                    return true;
             }
             return true;
+        }
+
+        @Override
+        public boolean onPreferenceClick(Preference preference) {
+            switch (preference.getKey()) {
+                case ICON_PACK: {
+                    Intent iconPack = new Intent(getActivity(), IconPackSettingsActivity.class);
+                    startActivity(iconPack);
+
+                }
+                break;
+            }
+            return false;
         }
     }
 }
