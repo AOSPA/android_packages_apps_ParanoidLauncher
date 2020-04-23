@@ -28,4 +28,7 @@
         android:clipToPadding="false"
         android:outlineProvider="none"
         android:theme="@style/HomeScreenElementTheme" />
+
+    <include
+        layout="@layout/overview_control_panel"/>
 </com.android.quickstep.fallback.RecentsRootView>

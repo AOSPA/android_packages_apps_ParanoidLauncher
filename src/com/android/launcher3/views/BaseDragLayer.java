@@ -47,6 +47,8 @@ import com.android.launcher3.util.MultiValueAlpha;
 import com.android.launcher3.util.MultiValueAlpha.AlphaProperty;
 import com.android.launcher3.util.TouchController;
 
+import com.paranoid.quickstep.views.TaskIconsView;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
@@ -512,5 +514,35 @@ public abstract class BaseDragLayer<T extends Context & ActivityContext>
                     gestureInsets.right, gestureInsets.bottom);
         }
         return super.dispatchApplyWindowInsets(insets);
+    }
+
+    public void updateRecentsControlPanelUI() {
+        if (!(mActivity instanceof BaseDraggingActivity)) {
+            Log.w(TAG, "updateRecentsControlPanelUI: activity= " + ((Object) mActivity));
+            return;
+        }
+        BaseDraggingActivity baseDraggingActivity = (BaseDraggingActivity) mActivity;
+        RecentsView recentsView = (RecentsView) baseDraggingActivity.getOverviewPanel();
+        if (recentsView == null) {
+            Log.w(TAG, "updateRecentsControlPanelUI: recentsView is null.");
+            return;
+        }
+        TaskIconsView taskIconsView = recentsView.getTaskIconsView();
+        if (taskIconsView != null) {
+            taskIconsView.updatePadding();
+        } else {
+            Log.w(TAG, "updateRecentsControlPanelUI: taskIconsView is null.");
+        }
+        View clearAllButton = recentsView.getClearAllButton();
+        if (clearAllButton != null) {
+            Resources resources = getContext().getResources();
+            RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) clearAllButton.getLayoutParams();
+            layoutParams.height = LayoutUtils.getClearAllHeight(resources);
+            layoutParams.topMargin = LayoutUtils.getClearAllTopMargin(resources);
+            layoutParams.bottomMargin = LayoutUtils.getClearAllBottomMargin(getContext(), mActivity instanceof RecentsActivity, baseDraggingActivity.isInMultiWindowMode());
+            clearAllButton.setLayoutParams(layoutParams);
+            return;
+        }
+        Log.w(TAG, "updateRecentsControlPanelUI: clearAllButton is null.");
     }
 }
