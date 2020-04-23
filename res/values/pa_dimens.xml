@@ -25,4 +25,11 @@
     <dimen name="qsb_shadow_margin">6dp</dimen>
     <dimen name="qsb_widget_height">56dp</dimen>
 
+    <!-- Task control -->
+    <dimen name="clear_all_height_portrait">38dp</dimen>
+    <dimen name="task_icon_size">30dp</dimen>
+    <dimen name="task_icons_list_height">64dp</dimen>
+    <dimen name="task_icons_page_indicator_dot_size">4.6dp</dimen>
+    <dimen name="task_icons_page_spacing">11.8dp</dimen>
+
 </resources>
