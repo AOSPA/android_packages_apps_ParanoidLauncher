@@ -27,11 +27,36 @@
         android:layout_height="match_parent"
         android:layout_marginTop="@dimen/task_thumbnail_top_margin"/>
 
+    <RelativeLayout
+        android:layout_gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:id="@+id/task_name_and_lock"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/task_thumbnail_top_margin">
+        <TextView
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textColorHint="?android:attr/textColorPrimary"
+            android:ellipsize="end"
+            android:id="@+id/task_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:drawablePadding="8dp"
+            android:layout_centerVertical="true"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+    </RelativeLayout>
+
     <com.android.quickstep.views.IconView
         android:id="@+id/icon"
         android:layout_width="@dimen/task_thumbnail_icon_size"
         android:layout_height="@dimen/task_thumbnail_icon_size"
         android:layout_gravity="top|center_horizontal"
         android:focusable="false"
+        android:visibility="gone"
         android:importantForAccessibility="no"/>
 </com.android.quickstep.views.TaskView>

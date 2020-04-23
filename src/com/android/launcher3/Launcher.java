@@ -151,6 +151,9 @@ import com.android.launcher3.widget.WidgetListRowEntry;
 import com.android.launcher3.widget.WidgetsFullSheet;
 import com.android.launcher3.widget.custom.CustomWidgetManager;
 
+import com.paranoid.quickstep.views.TaskIconsIndicatorDots;
+import com.paranoid.quickstep.views.TaskIconsView;
+
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -249,6 +252,8 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
 
     // UI and state for the overview panel
     private View mOverviewPanel;
+
+    private View mOverviewControlPanel;
 
     @Thunk
     boolean mWorkspaceLoading = true;
@@ -1106,6 +1111,7 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
         mWorkspace = mDragLayer.findViewById(R.id.workspace);
         mWorkspace.initParentViews(mDragLayer);
         mOverviewPanel = findViewById(R.id.overview_panel);
+        mOverviewControlPanel = findViewById(R.id.overview_control_panel);
         mHotseat = findViewById(R.id.hotseat);
 
         mLauncherView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -1351,6 +1357,14 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
 
     public <T extends View> T getOverviewPanel() {
         return (T) mOverviewPanel;
+    }
+
+    public TaskIconsView getTaskIconsView() {
+        return (TaskIconsView) mOverviewControlPanel.findViewById(R.id.task_icons_view);
+    }
+
+    public TaskIconsIndicatorDots getOverviewIndicator() {
+        return (TaskIconsIndicatorDots) mOverviewControlPanel.findViewById(R.id.task_icons_indicator);
     }
 
     public DropTargetBar getDropTargetBar() {

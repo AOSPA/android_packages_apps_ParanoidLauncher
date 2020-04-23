@@ -39,6 +39,7 @@ import static com.android.launcher3.util.SystemUiController.UI_STATE_OVERVIEW;
 import static com.android.quickstep.TaskUtils.checkCurrentOrManagedUserId;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.LayoutTransition;
 import android.animation.LayoutTransition.TransitionListener;
@@ -75,6 +76,8 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.animation.Interpolator;
+import android.view.animation.PathInterpolator;
 import android.widget.ListView;
 
 import androidx.annotation.Nullable;
@@ -93,6 +96,7 @@ import com.android.launcher3.anim.PropertyListBuilder;
 import com.android.launcher3.anim.SpringObjectAnimator;
 import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.graphics.RotationMode;
+import com.android.launcher3.uioverrides.UiFactory;
 import com.android.launcher3.userevent.nano.LauncherLogProto;
 import com.android.launcher3.userevent.nano.LauncherLogProto.Action.Direction;
 import com.android.launcher3.userevent.nano.LauncherLogProto.Action.Touch;
@@ -114,6 +118,10 @@ import com.android.systemui.shared.system.LauncherEventUtil;
 import com.android.systemui.shared.system.PackageManagerWrapper;
 import com.android.systemui.shared.system.SyncRtSurfaceTransactionApplierCompat;
 import com.android.systemui.shared.system.TaskStackChangeListener;
+
+import com.paranoid.quickstep.views.TaskIcon;
+import com.paranoid.quickstep.views.TaskIconsIndicatorDots;
+import com.paranoid.quickstep.views.TaskIconsView;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;
@@ -172,10 +180,16 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
     private final float mFastFlingVelocity;
     private final RecentsModel mModel;
     private final int mTaskTopMargin;
-    private final ClearAllButton mClearAllButton;
+    public AnimatorSet mClearAllAnimation;
+    private ClearAllButton mClearAllButton;
     private final Rect mClearAllButtonDeadZoneRect = new Rect();
     private final Rect mTaskViewDeadZoneRect = new Rect();
     protected final ClipAnimationHelper mTempClipAnimationHelper;
+
+    protected AnimatorSet mTaskIconsAnimatorSet;
+    protected AnimatorSet mTaskIndicatorAnimatorSet;
+    protected TaskIconsIndicatorDots mTaskIconsIndicator;
+    protected TaskIconsView mTaskIconsView;
 
     private final ScrollState mScrollState = new ScrollState();
     // Keeps track of the previously known visible tasks for purposes of loading/unloading task data
@@ -294,6 +308,10 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
 
     // Keeps track of task id whose visual state should not be reset
     private int mIgnoreResetTaskId = -1;
+
+    public boolean mIsClearAllAnimFadeIn = false;
+    public boolean mIsIndicatorAnimFadeIn = false;
+    public boolean mIsTaskIconsAnimFadeIn = false;
 
     // Variables for empty state
     private final Drawable mEmptyIcon;
@@ -436,6 +454,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
             mHasVisibleTaskData.delete(taskView.getTask().key.id);
             mTaskViewPool.recycle(taskView);
         }
+        onChildViewsChanged();
     }
 
     public boolean isTaskViewVisible(TaskView tv) {
@@ -484,6 +503,8 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
             case MotionEvent.ACTION_UP:
                 if (mTouchDownToStartHome) {
                     startHome();
+                } else {
+                    UiFactory.getRecentsOperationController().onRecentsScroll(mActivity);
                 }
                 mTouchDownToStartHome = false;
                 break;
@@ -497,6 +518,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
                                 squaredHypot(mDownX - x, mDownY - y) > mSquaredTouchSlop)) {
                     mTouchDownToStartHome = false;
                 }
+                UiFactory.getRecentsOperationController().updateIndicatorForRecents(mActivity, getScrollX(), mScroller.getFinalPos());
                 break;
             case MotionEvent.ACTION_DOWN:
                 // Touch down anywhere but the deadzone around the visible clear all button and
@@ -538,6 +560,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
 
         if (tasks == null || tasks.isEmpty()) {
             removeTasksViewsAndClearAllButton();
+            mTaskIconsView.removeAllViews();
             onTaskStackUpdated();
             return;
         }
@@ -553,6 +576,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
             if (indexOfChild(mClearAllButton) != -1) {
                 removeView(mClearAllButton);
             }
+            mTaskIconsView.applyLoadPlan(tasks);
             for (int i = getTaskViewCount(); i < requiredTaskCount; i++) {
                 addView(mTaskViewPool.getView());
             }
@@ -600,6 +624,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
         if (indexOfChild(mClearAllButton) != -1) {
             removeView(mClearAllButton);
         }
+        mTaskIconsView.release();
     }
 
     public int getTaskViewCount() {
@@ -1179,6 +1204,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
 
             private void onEnd(PendingAnimation.OnEndListener onEndListener) {
                 if (onEndListener.isSuccess) {
+                    mTaskIconsView.playTaskIconDismissAnimation((TaskIcon) mTaskIconsView.getChildAt((count - draggedIndex) - 1));
                     if (shouldRemoveTask) {
                         removeTask(taskView.getTask(), draggedIndex, onEndListener, true);
                     }
@@ -1265,6 +1291,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
     @SuppressWarnings("unused")
     private void dismissAllTasks(View view) {
         runDismissAnimation(createAllTasksDismissAnimation(DISMISS_TASK_DURATION));
+        playControlPanelAnimation(false);
         mActivity.getUserEventDispatcher().logActionOnControl(TAP, CLEAR_ALL_BUTTON);
     }
 
@@ -1366,6 +1393,10 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
     public void onViewAdded(View child) {
         super.onViewAdded(child);
         child.setAlpha(mContentAlpha);
+        if (getChildCount() == 1 && this.mOverviewStateEnabled) {
+            playControlPanelAnimation(true);
+        }
+        onChildViewsChanged();
     }
 
     @Nullable
@@ -1579,6 +1610,22 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
         clipAnimationHelper.prepareAnimation(mActivity.getDeviceProfile(), true /* isOpening */);
         AnimatorSet anim = createAdjacentPageAnimForTaskLaunch(tv, clipAnimationHelper);
         anim.play(progressAnim);
+
+        AnimatorSet clearAll = getClearAllAnimation(false);
+        if (clearAll != null) {
+            anim.play(clearAll);
+        }
+        AnimatorSet taskIcons = getTaskIconsAnimation(false);
+        if (taskIcons != null) {
+            anim.play(taskIcons);
+        }
+        AnimatorSet taskIndicator = getTaskIndicatorAnimation(false);
+        if (taskIndicator != null) {
+            anim.play(taskIndicator);
+        }
+        View taskNameAndLock = tv.getTaskNameAndLock();
+        anim.play(getFadeOutTaskBarAnimation(taskNameAndLock));
+
         anim.setDuration(duration);
 
         Consumer<Boolean> onTaskLaunchFinish = this::onTaskLaunched;
@@ -1600,6 +1647,9 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
                             TaskUtils.getLaunchComponentKeyForTask(task.key));
                 }
             } else {
+                resetTaskNameState(mTaskIconsView);
+                resetClearAllState(0);
+                resetTaskIconsState(0);
                 onTaskLaunchFinish.accept(false);
             }
             mPendingAnimation = null;
@@ -1752,6 +1802,332 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
             return getScrollForPage(indexOfChild(getTaskViewAt(getTaskViewCount() - 1)) + 1);
         }
         return super.computeMaxScrollX();
+    }
+
+    public void setupControlPanel(View view) {
+        mClearAllButton = view.findViewById(R.id.clear_all_button);
+        mClearAllButton.setOnClickListener(this::dismissAllTasks);
+        mClearAllButton.setClipToOutline(false);
+        onChildViewsChanged();
+        mTaskIconsView = (TaskIconsView) view.findViewById(R.id.task_icons_view);
+        mTaskIconsView.setRecentsView(this);
+        mTaskIconsIndicator = (TaskIconsIndicatorDots) view.findViewById(R.id.task_icons_indicator);
+    }
+
+    private void onChildViewsChanged() {
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                setFocusable(canShowClearBtn());
+            }
+        });
+    }
+
+    public TaskIconsView getTaskIconsView() {
+        return mTaskIconsView;
+    }
+
+    public boolean canShowClearBtn() {
+        return getChildCount() != 0;
+    }
+
+    public void playControlPanelAnimation(boolean animate) {
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AnimatorSet clearAll = getClearAllAnimation(animate);
+                if (clearAll != null) {
+                    clearAll.start();
+                }
+                AnimatorSet taskIcons = getTaskIconsAnimation(animate);
+                if (taskIcons != null) {
+                    taskIcons.start();
+                }
+                AnimatorSet taskIndicator = getTaskIndicatorAnimation(animate);
+                if (taskIndicator != null) {
+                    taskIndicator.start();
+                }
+            }
+        });
+    }
+
+    public void resetClearAllState(int state) {
+        if (mClearAllButton != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mClearAllAnimation != null) {
+                        mClearAllAnimation.cancel();
+                    }
+                    mClearAllButton.setVisibility(state);
+                    boolean isShowing = state == View.VISIBLE;
+                    float translationY = 0.0f;
+                    mClearAllButton.setAlpha(isShowing ? 1.0f : 0.0f);
+                    View view = this.mClearAllButton;
+                    if (!isShowing) {
+                        translationY = 42.0f;
+                    }
+                    view.setTranslationY(translationY);
+                }
+            });
+        }
+    }
+
+    public void resetTaskIconsState(int state) {
+        if (mTaskIconsView != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mTaskIconsAnimatorSet != null) {
+                        mTaskIconsAnimatorSet.cancel();
+                    }
+                    boolean isShowing = state == View.VISIBLE;
+                    mTaskIconsView.resetTaskIconsVisuals();
+                    float scaleY = 1.0f;
+                    mTaskIconsView.updateTaskIconsAlpha(isShowing ? 1.0f : 0.0f);
+                    mTaskIconsView.setVisibility(state);
+                    mTaskIconsIndicator.setAlpha(isShowing ? 1.0f : 0.0f);
+                    mTaskIconsIndicator.setScaleX(isShowing ? 1.0f : 0.0f);
+                    if (!isShowing) {
+                        scaleY = 0.0f;
+                    }
+                    mTaskIconsIndicator.setScaleY(scaleY);
+                }
+            });
+        }
+    }
+
+    public AnimatorSet getClearAllAnimation(boolean animate) {
+        mClearAllAnimation = new AnimatorSet();
+        if (animate && getChildCount() == 0) {
+            return mClearAllAnimation;
+        } else if (mClearAllButton == null) {
+            return mClearAllAnimation;
+        } else {
+            if (mClearAllAnimation != null && mClearAllAnimation.isStarted()) {
+                if (mIsClearAllAnimFadeIn == animate) {
+                    return mClearAllAnimation;
+                }
+                mClearAllAnimation.cancel();
+            }
+            float clearAllButtonAlpha = animate ? 1.0f : 0.0f;
+            if (mClearAllButton.getAlpha() == clearAllButtonAlpha) {
+                return mClearAllAnimation;
+            }
+            mIsClearAllAnimFadeIn = animate;
+            mClearAllAnimation.setInterpolator(Interpolators.FAST_OUT_SLOW_IN);
+            mClearAllAnimation.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationStart(Animator animator) {
+                    if (animate) {
+                        mClearAllButton.setVisibility(View.VISIBLE);
+                    }
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    mClearAllAnimation = null;
+                    int state = View.VISIBLE;
+                    mIsClearAllAnimFadeIn = false;
+                    if (!animate) {
+                        state = View.GONE;
+                    }
+                    resetClearAllState(state);
+                }
+            });
+            ObjectAnimator transY = ObjectAnimator.ofFloat(mClearAllButton, View.TRANSLATION_Y, animate ? 42.0f : 0.0f, animate ? 0.0f : 42.0f);
+            ObjectAnimator alpha = ObjectAnimator.ofFloat(mClearAllButton, View.ALPHA, animate ? 0.0f : 1.0f, animate ? 1.0f : 0.0f);
+            mClearAllAnimation.setDuration(mClearAllButton.getAlpha() == clearAllButtonAlpha ? 0 : 225);
+            mClearAllAnimation.setStartDelay(animate ? 75 : 0);
+            mClearAllAnimation.playTogether(transY, alpha);
+            return mClearAllAnimation;
+        }
+    }
+
+    public AnimatorSet getTaskIconsAnimation(boolean animate) {
+        mTaskIconsAnimatorSet = new AnimatorSet();
+        if (mTaskIconsView == null) {
+            return mTaskIconsAnimatorSet;
+        }
+        int childCount = mTaskIconsView.getChildCount();
+        if (!animate || childCount != 0) {
+            View child = mTaskIconsView.getChildAt(childCount - 1);
+            if (child == null) {
+                mTaskIconsView.setVisibility(animate ? View.VISIBLE : View.GONE);
+                return mTaskIconsAnimatorSet;
+            }
+            if (mTaskIconsAnimatorSet != null && mTaskIconsAnimatorSet.isRunning()) {
+                if (mIsTaskIconsAnimFadeIn == animate) {
+                    return mTaskIconsAnimatorSet;
+                }
+                mTaskIconsAnimatorSet.cancel();
+            }
+            float childAlpha = animate ? 1.0f : 0.0f;
+            if (child.getAlpha() == childAlpha) {
+                mTaskIconsView.setVisibility(animate ? View.VISIBLE : View.GONE);
+                return mTaskIconsAnimatorSet;
+            }
+            mIsTaskIconsAnimFadeIn = animate;
+            mTaskIconsAnimatorSet.setInterpolator(Interpolators.FAST_OUT_SLOW_IN);
+            mTaskIconsAnimatorSet.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationStart(Animator animator) {
+                    if (animate) {
+                        mTaskIconsView.updateTaskIconsAlpha(0.0f);
+                        mTaskIconsView.setAlpha(1.0f);
+                        mTaskIconsView.setVisibility(0);
+                        mTaskIconsView.showCurrentTask();
+                    }
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    mTaskIconsAnimatorSet = null;
+                    mIsTaskIconsAnimFadeIn = false;
+                    if (mTaskIconsView != null) {
+                        mTaskIconsView.resetTaskIconsVisuals();
+                        mTaskIconsView.updateTaskIconsAlpha(animate ? 1.0f : 0.0f);
+                        mTaskIconsView.setVisibility(animate ? View.VISIBLE : View.GONE);
+                        return;
+                    }
+                }
+            });
+            ArrayList anim = new ArrayList();
+            for (int i = 0; i < childCount; i++) {
+                View children = mTaskIconsView.getChildAt((childCount - i) - 1);
+                if (children != null) {
+                    children.setAlpha(animate ? 0.0f : 1.0f);
+                    ObjectAnimator alpha = ObjectAnimator.ofFloat(children, View.ALPHA, animate ? 0.0f : 1.0f, animate ? 1.0f : 0.0f);
+                    ObjectAnimator transX = ObjectAnimator.ofFloat(children, View.TRANSLATION_X, animate ? -110.0f : 0.0f, animate ? 0.0f : -110.0f);
+                    if (animate) {
+                        long duration = (long) (i * 32);
+                        alpha.setStartDelay(duration);
+                        transX.setStartDelay(duration);
+                    }
+                    anim.add(alpha);
+                    anim.add(transX);
+                }
+            }
+            mTaskIconsAnimatorSet.playTogether(anim);
+            mTaskIconsAnimatorSet.setDuration(child.getAlpha() == childAlpha ? 0 : animate ? 300 : 225);
+            return mTaskIconsAnimatorSet;
+        }
+        return mTaskIconsAnimatorSet;
+    }
+
+    public boolean isTaskIconsAnimRunning() {
+        return mTaskIconsAnimatorSet != null && mTaskIconsAnimatorSet.isRunning();
+    }
+
+    public AnimatorSet getTaskIndicatorAnimation(boolean animate) {
+        mTaskIndicatorAnimatorSet = new AnimatorSet();
+        if (mTaskIconsIndicator == null) {
+            return mTaskIndicatorAnimatorSet;
+        }
+        int childCount = mTaskIconsView.getChildCount();
+        if (!animate || childCount != 0) {
+            if (mTaskIndicatorAnimatorSet != null && mTaskIndicatorAnimatorSet.isRunning()) {
+                if (mIsIndicatorAnimFadeIn == animate) {
+                    return mTaskIndicatorAnimatorSet;
+                }
+                mTaskIndicatorAnimatorSet.cancel();
+            }
+            float taskIconsIndicatorAlpha = animate ? 1.0f : 0.0f;
+            if (mTaskIconsIndicator.getAlpha() == taskIconsIndicatorAlpha) {
+                return mTaskIndicatorAnimatorSet;
+            }
+            Interpolator taskIndicator = new PathInterpolator(0.3f, 0.0f, 0.7f, 1.0f);
+            mTaskIndicatorAnimatorSet.setInterpolator(taskIndicator);
+            mTaskIndicatorAnimatorSet.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationStart(Animator animator) {
+                    if (animate) {
+                        mTaskIconsIndicator.setAlpha(0.0f);
+                        mTaskIconsIndicator.setScaleX(0.0f);
+                        mTaskIconsIndicator.setScaleY(0.0f);
+                    }
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    mTaskIndicatorAnimatorSet = null;
+                    mIsIndicatorAnimFadeIn = false;
+                    mTaskIconsIndicator.setAlpha(animate ? 1.0f : 0.0f);
+                    mTaskIconsIndicator.setScaleX(animate ? 1.0f : 0.0f);
+                    mTaskIconsIndicator.setScaleY(animate ? 1.0f : 0.0f);
+                }
+            });
+            ObjectAnimator alpha = ObjectAnimator.ofFloat(mTaskIconsIndicator, View.ALPHA, animate ? 0.0f : 1.0f, animate ? 1.0f : 0.0f);
+            alpha.setDuration(160L);
+            ObjectAnimator scaleX = ObjectAnimator.ofFloat(mTaskIconsIndicator, View.SCALE_X, animate ? 0.0f : 1.0f, 1.2f);
+            scaleX.setDuration(125);
+            ObjectAnimator scaleY = ObjectAnimator.ofFloat(mTaskIconsIndicator, View.SCALE_Y, animate ? 0.0f : 1.0f, 1.2f);
+            scaleY.setDuration(125);
+            ObjectAnimator scaleXDelay = ObjectAnimator.ofFloat(mTaskIconsIndicator, View.SCALE_X, 1.2f, animate ? 1.0f : 0.0f);
+            scaleXDelay.setDuration(175);
+            scaleXDelay.setStartDelay(125);
+            ObjectAnimator scaleYDelay = ObjectAnimator.ofFloat(mTaskIconsIndicator, View.SCALE_Y, 1.2f, animate ? 1.0f : 0.0f);
+            scaleYDelay.setDuration(175);
+            scaleYDelay.setStartDelay(125);
+            mTaskIndicatorAnimatorSet.playTogether(alpha, scaleX, scaleY, scaleXDelay, scaleYDelay);
+            return mTaskIndicatorAnimatorSet;
+        }
+        return mTaskIndicatorAnimatorSet;
+    }
+
+    public void playTaskBounceAnimation(int index) {
+        TaskView taskView = getTaskViewAt(index);
+        if (taskView == null) {
+            return;
+        }
+        if (mTaskBounceAnimation != null) {
+            mTaskBounceAnimation.cancel();
+        }
+        mTaskBounceAnimation = new AnimatorSet();
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(taskView, View.SCALE_X, 1.0f, 0.95f).setDuration(150);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(taskView, View.SCALE_Y, 1.0f, 0.95f).setDuration(150);
+        ObjectAnimator scaleXDelay = ObjectAnimator.ofFloat(taskView, View.SCALE_X, 0.95f, 1.0f).setDuration(150);
+        scaleXDelay.setStartDelay(150);
+        ObjectAnimator scaleYDelay = ObjectAnimator.ofFloat(taskView, View.SCALE_Y, 0.95f, 1.0f).setDuration(150);
+        scaleYDelay.setStartDelay(150);
+
+        Interpolator bounce = new PathInterpolator(0.3f, 0.0f, 0.7f, 1.0f);
+        mTaskBounceAnimation.setInterpolator(bounce);
+        mTaskBounceAnimation.playTogether(scaleX, scaleY, scaleXDelay, scaleYDelay);
+        mTaskBounceAnimation.start();
+    }
+
+    public AnimatorSet getFadeOutTaskBarAnimation(View view) {
+        AnimatorSet anim = new AnimatorSet();
+        Interpolator fadeOutInterpolator = new PathInterpolator(0.4f, 0.0f, 1.0f, 1.0f);
+        anim.setInterpolator(fadeOutInterpolator);
+        anim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                resetTaskNameState(view);
+            }
+        });
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, View.SCALE_X, 1.0f, 0.5f);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, View.SCALE_Y, 1.0f, 0.5f);
+        ValueAnimator alpha = ObjectAnimator.ofFloat(0.0f, 1.0f);
+        alpha.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                view.setAlpha(Math.max(((1.0f - valueAnimator.getAnimatedFraction()) - 0.7f) * 3.0f, 0.0f));
+            }
+        });
+        anim.playTogether(scaleX, scaleY, alpha, ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, 0.0f, -600.0f));
+        anim.setDuration(250L);
+        return anim;
+    }
+
+    public void resetTaskNameState(View view) {
+        if (view != null) {
+            view.setVisibility(View.VISIBLE);
+            view.setAlpha(1.0f);
+            view.setTranslationY(0.0f);
+            return;
+        }
     }
 
     public ClearAllButton getClearAllButton() {
