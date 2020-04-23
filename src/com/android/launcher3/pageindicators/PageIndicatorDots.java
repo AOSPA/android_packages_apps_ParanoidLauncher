@@ -74,13 +74,13 @@ public class PageIndicatorDots extends View implements PageIndicator {
     };
 
     private final Paint mCirclePaint;
-    private final float mDotRadius;
-    private final int mActiveColor;
-    private final int mInActiveColor;
+    protected float mDotRadius;
+    protected int mActiveColor;
+    protected int mInActiveColor;
     private final boolean mIsRtl;
 
-    private int mNumPages;
-    private int mActivePage;
+    protected int mNumPages;
+    protected int mActivePage;
 
     /**
      * The current position of the active dot including the animation progress.
@@ -144,7 +144,7 @@ public class PageIndicatorDots extends View implements PageIndicator {
         }
     }
 
-    private void animateToPosition(float position) {
+    protected void animateToPosition(float position) {
         mFinalPosition = position;
         if (Math.abs(mCurrentPosition - mFinalPosition) < SHIFT_THRESHOLD) {
             mCurrentPosition = mFinalPosition;

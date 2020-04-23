@@ -195,6 +195,11 @@ public class NoButtonQuickSwitchTouchController implements TouchController,
                 // Hotseat was hidden, but we need it visible when peeking.
                 mLauncher.getHotseat().setAlpha(1);
             }
+
+            LauncherRecentsView recentsView = mLauncher.getOverviewPanel();
+            if (!(recentsView == null || recentsView.getTaskIconsView() == null)) {
+                recentsView.getTaskIconsView().showCurrentTask();
+            }
         }
         mShelfPeekAnim.setShelfState(shelfState, ShelfPeekAnim.INTERPOLATOR,
                 ShelfPeekAnim.DURATION);

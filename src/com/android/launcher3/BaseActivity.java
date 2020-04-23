@@ -81,6 +81,8 @@ public abstract class BaseActivity extends Activity
     protected StatsLogManager mStatsLogManager;
     protected SystemUiController mSystemUiController;
 
+    private boolean mActivityPaused;
+
     private static final int ACTIVITY_STATE_STARTED = 1 << 0;
     private static final int ACTIVITY_STATE_RESUMED = 1 << 1;
     /**
@@ -153,6 +155,7 @@ public abstract class BaseActivity extends Activity
     @Override
     protected void onResume() {
         mActivityFlags |= ACTIVITY_STATE_RESUMED | ACTIVITY_STATE_USER_ACTIVE;
+        mActivityPaused = false;
         super.onResume();
     }
 
@@ -184,6 +187,7 @@ public abstract class BaseActivity extends Activity
     @Override
     protected void onPause() {
         mActivityFlags &= ~ACTIVITY_STATE_RESUMED;
+        mActivityPaused = false;
         super.onPause();
 
         // Reset the overridden sysui flags used for the task-swipe launch animation, we do this
@@ -195,6 +199,10 @@ public abstract class BaseActivity extends Activity
 
     public boolean isStarted() {
         return (mActivityFlags & ACTIVITY_STATE_STARTED) != 0;
+    }
+
+    public boolean isPaused() {
+        return mActivityPaused;
     }
 
     /**

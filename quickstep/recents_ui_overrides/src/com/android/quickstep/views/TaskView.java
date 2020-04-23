@@ -37,6 +37,7 @@ import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.AttributeSet;
 import android.util.FloatProperty;
 import android.util.Log;
@@ -45,6 +46,7 @@ import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.launcher3.BaseDraggingActivity;
@@ -160,6 +162,9 @@ public class TaskView extends FrameLayout implements PageCallbacks, Reusable {
     private final float mWindowCornerRadius;
     private final BaseDraggingActivity mActivity;
 
+    private TextView mTaskName;
+    private View mTaskNameAndLock;
+
     private ObjectAnimator mIconAndDimAnimator;
     private float mIconScaleAnimStartProgress = 0;
     private float mFocusTransitionProgress = 1;
@@ -224,6 +229,16 @@ public class TaskView extends FrameLayout implements PageCallbacks, Reusable {
         super.onFinishInflate();
         mSnapshotView = findViewById(R.id.snapshot);
         mIconView = findViewById(R.id.icon);
+        mTaskName = (TextView) findViewById(R.id.task_name);
+        mTaskNameAndLock = findViewById(R.id.task_name_and_lock);
+        mTaskNameAndLock.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mMenuView != null) {
+                    mMenuView.close(true);
+                }
+            }
+        });
     }
 
     public TaskMenuView getMenuView() {
@@ -253,6 +268,10 @@ public class TaskView extends FrameLayout implements PageCallbacks, Reusable {
 
     public IconView getIconView() {
         return mIconView;
+    }
+
+    public View getTaskNameAndLock() {
+        return mTaskNameAndLock;
     }
 
     public AnimatorPlaybackController createLaunchAnimationForRunningTask() {
@@ -347,14 +366,15 @@ public class TaskView extends FrameLayout implements PageCallbacks, Reusable {
             TaskIconCache iconCache = model.getIconCache();
             mThumbnailLoadRequest = thumbnailCache.updateThumbnailInBackground(
                     mTask, thumbnail -> mSnapshotView.setThumbnail(mTask, thumbnail));
-            mIconLoadRequest = iconCache.updateIconInBackground(mTask,
+            /*mIconLoadRequest = iconCache.updateIconInBackground(mTask,
                     (task) -> {
                         setIcon(task.icon);
                         if (ENABLE_QUICKSTEP_LIVE_TILE.get() && isRunningTask()) {
                             getRecentsView().updateLiveTileIcon(task.icon);
                         }
                         mDigitalWellBeingToast.initialize(mTask);
-                    });
+                    });*/
+            updateTaskNameInBackground();
         } else {
             mSnapshotView.setThumbnail(null, null);
             setIcon(null);
@@ -414,6 +434,8 @@ public class TaskView extends FrameLayout implements PageCallbacks, Reusable {
                 .getInterpolation(progress);
         mIconView.setScaleX(scale);
         mIconView.setScaleY(scale);
+        mTaskNameAndLock.setScaleX(scale);
+        mTaskNameAndLock.setScaleY(scale);
 
         mFooterVerticalOffset = 1.0f - scale;
         for (FooterWrapper footer : mFooters) {
@@ -795,6 +817,7 @@ public class TaskView extends FrameLayout implements PageCallbacks, Reusable {
         mFullscreenProgress = progress;
         boolean isFullscreen = mFullscreenProgress > 0;
         mIconView.setVisibility(progress < 1 ? VISIBLE : INVISIBLE);
+        mTaskNameAndLock.setVisibility(progress < 1 ? VISIBLE : INVISIBLE);
         setClipChildren(!isFullscreen);
         setClipToPadding(!isFullscreen);
 
@@ -844,6 +867,23 @@ public class TaskView extends FrameLayout implements PageCallbacks, Reusable {
             return true;
         }
         return mShowScreenshot;
+    }
+
+    private void updateTaskNameInBackground() {
+        HandlerThread thread = new HandlerThread("task-name-worker");
+        thread.start();
+        Handler handler = new Handler(thread.getLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mTaskName.setText(TaskUtils.getTitle(getContext(), mTask));
+                    }
+                });
+            }
+        });
     }
 
     public void setOverlayEnabled(boolean overlayEnabled) {
