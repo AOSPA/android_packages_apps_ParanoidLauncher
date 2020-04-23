@@ -24,6 +24,7 @@ import static com.android.launcher3.util.DefaultDisplay.getSingleFrameMs;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Insets;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -38,14 +39,21 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
+import android.widget.RelativeLayout;
 
 import com.android.launcher3.AbstractFloatingView;
+import com.android.launcher3.BaseDraggingActivity;
 import com.android.launcher3.InsettableFrameLayout;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.testing.TestProtocol;
 import com.android.launcher3.util.MultiValueAlpha;
 import com.android.launcher3.util.MultiValueAlpha.AlphaProperty;
 import com.android.launcher3.util.TouchController;
+
+import com.android.quickstep.RecentsActivity;
+import com.android.quickstep.util.LayoutUtils;
+import com.android.quickstep.views.RecentsView;
+import com.paranoid.quickstep.views.TaskIconsView;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -512,5 +520,20 @@ public abstract class BaseDragLayer<T extends Context & ActivityContext>
                     gestureInsets.right, gestureInsets.bottom);
         }
         return super.dispatchApplyWindowInsets(insets);
+    }
+
+    public void updateRecentsControlPanelUI() {
+        if (!(mActivity instanceof BaseDraggingActivity)) {
+            return;
+        }
+        BaseDraggingActivity baseDraggingActivity = (BaseDraggingActivity) mActivity;
+        RecentsView recentsView = (RecentsView) baseDraggingActivity.getOverviewPanel();
+        if (recentsView == null) {
+            return;
+        }
+        TaskIconsView taskIconsView = recentsView.getTaskIconsView();
+        if (taskIconsView != null) {
+            taskIconsView.updatePadding();
+        }
     }
 }
