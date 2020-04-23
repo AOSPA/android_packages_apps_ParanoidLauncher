@@ -104,6 +104,11 @@ public class LauncherRecentsView extends RecentsView<Launcher> implements StateL
     }
 
     @Override
+    public boolean isInOverView() {
+        return mActivity.isInState(LauncherState.OVERVIEW);
+    }
+
+    @Override
     public void setTranslationY(float translationY) {
         super.setTranslationY(translationY);
         if (ENABLE_QUICKSTEP_LIVE_TILE.get()) {

@@ -33,4 +33,7 @@
     <string name="icon_pack_summary">Current icon pack is %1$s</string>
     <string name="icon_pack_apply">Apply</string>
     <string name="icon_pack_settings_class">com.paranoid.launcher.settings.IconPackSettingsActivity$IconPackFragment</string>
+
+    <!-- Task control -->
+    <string name="recents_clear_all">Clear all</string>
 </resources>

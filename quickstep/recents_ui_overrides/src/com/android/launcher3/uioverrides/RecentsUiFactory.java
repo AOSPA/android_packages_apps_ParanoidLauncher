@@ -50,6 +50,8 @@ import com.android.quickstep.TouchInteractionService;
 import com.android.quickstep.views.RecentsView;
 import com.android.systemui.shared.system.WindowManagerWrapper;
 
+import com.paranoid.launcher.uioverrides.touchcontrollers.RecentsOperationController;
+
 import java.util.ArrayList;
 
 /**
@@ -60,6 +62,7 @@ public abstract class RecentsUiFactory {
     public static final boolean GO_LOW_RAM_RECENTS_ENABLED = false;
     private static final AsyncCommand SET_SHELF_HEIGHT_CMD = (visible, height) ->
             WindowManagerWrapper.getInstance().setShelfHeight(visible != 0, height);
+    private static RecentsOperationController sRecentsOperationController;
 
     public static RotationMode ROTATION_LANDSCAPE = new RotationMode(-90) {
         @Override
@@ -224,5 +227,12 @@ public abstract class RecentsUiFactory {
         protected void onUserControlledAnimationCreated(AnimatorPlaybackController animController) {
             mActivity.getStateManager().setCurrentUserControlledAnimation(animController);
         }
+    }
+
+    public static RecentsOperationController getRecentsOperationController() {
+        if (sRecentsOperationController == null) {
+            sRecentsOperationController = new RecentsOperationController();
+        }
+        return sRecentsOperationController;
     }
 }

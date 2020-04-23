@@ -41,6 +41,9 @@ import com.android.launcher3.uioverrides.WallpaperColorInfo;
 import com.android.launcher3.util.PackageManagerHelper;
 import com.android.launcher3.util.Themes;
 
+import com.paranoid.quickstep.views.TaskIconsView;
+import com.paranoid.quickstep.views.TaskIconsIndicatorDots;
+
 /**
  * Extension of BaseActivity allowing support for drag-n-drop
  */
@@ -119,6 +122,10 @@ public abstract class BaseDraggingActivity extends BaseActivity
     public abstract <T extends View> T getOverviewPanel();
 
     public abstract View getRootView();
+
+    public abstract TaskIconsView getTaskIconsView();
+
+    public abstract TaskIconsIndicatorDots getOverviewIndicator();
 
     public void returnToHomescreen() {
         // no-op

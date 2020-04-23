@@ -48,6 +48,9 @@
             layout="@layout/overview_panel"
             android:visibility="gone" />
 
+        <include
+            layout="@layout/overview_control_panel"/>
+
         <!-- Keep these behind the workspace so that they are not visible when
          we go into AllApps -->
         <com.android.launcher3.pageindicators.WorkspacePageIndicator

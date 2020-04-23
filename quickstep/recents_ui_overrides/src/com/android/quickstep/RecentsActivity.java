@@ -52,6 +52,9 @@ import com.android.systemui.shared.system.RemoteAnimationAdapterCompat;
 import com.android.systemui.shared.system.RemoteAnimationRunnerCompat;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 
+import com.paranoid.quickstep.views.TaskIconsIndicatorDots;
+import com.paranoid.quickstep.views.TaskIconsView;
+
 /**
  * A recents activity that shows the recently launched tasks as swipable task cards.
  * See {@link com.android.quickstep.views.RecentsView}.
@@ -64,12 +67,14 @@ public final class RecentsActivity extends BaseRecentsActivity {
     private Handler mUiHandler = new Handler(Looper.getMainLooper());
     private RecentsRootView mRecentsRootView;
     private FallbackRecentsView mFallbackRecentsView;
+    private View mOverviewControlPanel;
 
     @Override
     protected void initViews() {
         setContentView(R.layout.fallback_recents_activity);
         mRecentsRootView = findViewById(R.id.drag_layer);
         mFallbackRecentsView = findViewById(R.id.overview_panel);
+        mOverviewControlPanel = findViewById(R.id.overview_control_panel);
         mRecentsRootView.setup();
     }
 
@@ -133,6 +138,14 @@ public final class RecentsActivity extends BaseRecentsActivity {
     @Override
     public <T extends View> T getOverviewPanel() {
         return (T) mFallbackRecentsView;
+    }
+
+    public TaskIconsView getTaskIconsView() {
+        return (TaskIconsView) mOverviewControlPanel.findViewById(R.id.task_icons_view);
+    }
+
+    public TaskIconsIndicatorDots getOverviewIndicator() {
+        return (TaskIconsIndicatorDots) mOverviewControlPanel.findViewById(R.id.task_icons_indicator);
     }
 
     @Override

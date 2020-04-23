@@ -77,6 +77,11 @@ public class FallbackRecentsView extends RecentsView<RecentsActivity> {
     }
 
     @Override
+    public boolean isInOverView() {
+        return !mActivity.isPause();
+    }
+
+    @Override
     public void onViewAdded(View child) {
         super.onViewAdded(child);
         updateEmptyMessage();
