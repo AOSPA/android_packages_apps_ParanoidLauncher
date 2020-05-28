@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Paranoid Android
+ * Copyright (C) 2019-2020 Paranoid Android
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,22 @@ package com.paranoid.launcher.settings;
 
 import static com.paranoid.launcher.providers.IconPackProvider.PREF_ICON_PACK;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
+import android.preference.PreferenceFragment;
+import android.preference.TwoStatePreference;
 import android.text.TextUtils;
 
 import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 
 import com.android.launcher3.LauncherFiles;
@@ -41,12 +48,13 @@ public class ParanoidSettingsActivity extends SettingsActivity {
 
     public static final String MINUS_ONE_KEY = "pref_enable_minus_one";
     public static final String ICON_PACK = "pref_icon_pack";
+    public final static String SHOW_PREDICTIONS_PREF = "pref_show_predictions";
 
     /**
      * This fragment shows the launcher paranoid preferences.
      */
     public static class ParanoidLauncherSettingsFragment extends LauncherSettingsFragment implements
-        Preference.OnPreferenceClickListener, SharedPreferences.OnSharedPreferenceChangeListener {
+        Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener, SharedPreferences.OnSharedPreferenceChangeListener {
 
         private String mHighLightKey;
         private boolean mPreferenceHighlighted = false;
@@ -83,6 +91,7 @@ public class ParanoidSettingsActivity extends SettingsActivity {
             mIconPack = screen.findPreference(ICON_PACK);
             mIconPack.setOnPreferenceClickListener(this);
             updateIconPackSummary();
+            findPreference(SHOW_PREDICTIONS_PREF).setOnPreferenceChangeListener(this);
         }
 
         @Override
@@ -125,6 +134,21 @@ public class ParanoidSettingsActivity extends SettingsActivity {
         }
 
         @Override
+        public boolean onPreferenceChange(Preference preference, final Object newValue) {
+            switch (preference.getKey()) {
+                case SHOW_PREDICTIONS_PREF:
+                    if ((boolean) newValue) {
+                        return true;
+                    }
+                    ParanoidSettingsActivity.SuggestionConfirmationFragment confirmationFragment = new ParanoidSettingsActivity.SuggestionConfirmationFragment();
+                    confirmationFragment.setTargetFragment(this, 0);
+                    confirmationFragment.show(getFragmentManager(), preference.getKey());
+                    break;
+            }
+            return false;
+        }
+
+        @Override
         public boolean onPreferenceClick(Preference preference) {
             switch (preference.getKey()) {
                 case ICON_PACK: {
@@ -141,6 +165,26 @@ public class ParanoidSettingsActivity extends SettingsActivity {
             if (PREF_ICON_PACK.equals(key)) {
                 updateIconPackSummary();
             }
+        }
+    }
+
+    public static class SuggestionConfirmationFragment extends DialogFragment implements DialogInterface.OnClickListener {
+        public void onClick(final DialogInterface dialogInterface, final int n) {
+            if (getTargetFragment() instanceof PreferenceFragment) {
+                Preference preference = ((PreferenceFragmentCompat) getTargetFragment())
+                        .findPreference(SHOW_PREDICTIONS_PREF);
+                if (preference instanceof TwoStatePreference) {
+                    ((TwoStatePreference) preference).setChecked(false);
+                }
+            }
+        }
+
+        public Dialog onCreateDialog(final Bundle bundle) {
+            return new AlertDialog.Builder(getActivity())
+                    .setTitle(R.string.title_disable_suggestions_prompt)
+                    .setMessage(R.string.msg_disable_suggestions_prompt)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.label_turn_off_suggestions, this).create();
         }
     }
 }
