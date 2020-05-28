@@ -39,8 +39,6 @@
         android:paddingTop="@dimen/all_apps_header_top_padding"
         android:orientation="vertical" >
 
-        <include layout="@layout/floating_header_content" />
-
         <com.android.launcher3.allapps.PersonalWorkSlidingTabStrip
             android:id="@+id/tabs"
             android:layout_width="match_parent"
