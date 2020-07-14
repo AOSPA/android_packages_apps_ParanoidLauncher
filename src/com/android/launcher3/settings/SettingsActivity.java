@@ -27,6 +27,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
+import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
@@ -71,6 +72,8 @@ public class SettingsActivity extends FragmentActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getActionBar().setDisplayHomeAsUpEnabled(true);
+
         if (savedInstanceState == null) {
             Bundle args = new Bundle();
             String prefKey = getIntent().getStringExtra(EXTRA_FRAGMENT_ARG_KEY);
@@ -89,7 +92,17 @@ public class SettingsActivity extends FragmentActivity
     }
 
     @Override
+<<<<<<< HEAD   (2a06a7 Launcher: Let Launcher3QuickStepGo override Launcher3Go)
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) { }
+=======
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+>>>>>>> CHANGE (2969de ParanoidLauncher: Add back button in home settings)
 
     private boolean startFragment(String fragment, Bundle args, String key) {
         if (Utilities.ATLEAST_P && getSupportFragmentManager().isStateSaved()) {
