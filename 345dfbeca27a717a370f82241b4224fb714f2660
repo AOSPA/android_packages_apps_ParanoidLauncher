@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2088bd14_af8e3878",
+        "filename": "res/xml/default_workspace_2x2.xml",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1000468
+      },
+      "writtenOn": "2020-12-05T19:09:34Z",
+      "side": 1,
+      "message": "Use tabs or spaces but make it look better",
+      "revId": "345dfbeca27a717a370f82241b4224fb714f2660",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad",
+      "unresolved": true
+    }
+  ]
+}
