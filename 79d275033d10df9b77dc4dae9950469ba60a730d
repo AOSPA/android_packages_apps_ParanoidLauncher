@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "472f8706_b1137b54",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000447
+      },
+      "writtenOn": "2020-12-08T12:32:55Z",
+      "side": 1,
+      "message": "Can you give a better commit message as to what exactly this does?",
+      "revId": "79d275033d10df9b77dc4dae9950469ba60a730d",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
