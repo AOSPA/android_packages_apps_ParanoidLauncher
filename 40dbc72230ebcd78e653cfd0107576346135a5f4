@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "060f21c0_2823bb10",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000463
+      },
+      "writtenOn": "2021-01-08T17:16:33Z",
+      "side": 1,
+      "message": "I think you need to revert this too:\n\nhttps://gerrit.aospa.co/c/AOSPA/android_packages_apps_ParanoidLauncher/+/15818/10/quickstep/res/values/dimens.xml\n\nthis change was required to launcher be able to show 3 buttons on recents view.",
+      "revId": "40dbc72230ebcd78e653cfd0107576346135a5f4",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
