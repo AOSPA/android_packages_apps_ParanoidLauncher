@@ -25,12 +25,17 @@ import static com.android.launcher3.util.SecureSettingsObserver.newNotificationS
 
 import static co.aospa.launcher.OverlayCallbackImpl.KEY_ENABLE_MINUS_ONE;
 
+import android.app.ActionBar;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
+impirt android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
@@ -88,6 +93,19 @@ public class SettingsActivity extends FragmentActivity
             f.setArguments(args);
             // Display the fragment as the main content.
             fm.beginTransaction().replace(android.R.id.content, f).commit();
+
+            View actionBarView = getLayoutInflater().inflate(R.layout.actionbar, null);
+            TextView titleText = actionBarVIew.findViewById(R.id.actionBar);
+            titleText.setText(R.string.settings_button_text);
+            ActionBar actionBar = getActionBar();
+            if (actionBar != null) {
+                actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+                actionBar.setCustomView(actionBarView, new ActionBar.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.FILL_PARENT, Gravity.CENTER));
+                actionBar.setDisplayHomeAsUpEnabled(true);
+                actionBar.setBackgroundDrawable(new ColorDrawable(0));
+                actionBar.setElevation(0f);
+                return;
+            }
         }
         Utilities.getPrefs(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
     }
