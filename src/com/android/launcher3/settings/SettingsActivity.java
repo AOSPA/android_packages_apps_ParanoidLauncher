@@ -16,24 +16,19 @@
 
 package com.android.launcher3.settings;
 
-import static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS;
-
-import static com.android.launcher3.SessionCommitReceiver.ADD_ICON_PREFERENCE_KEY;
-import static com.android.launcher3.states.RotationHelper.ALLOW_ROTATION_PREFERENCE_KEY;
-import static com.android.launcher3.states.RotationHelper.getAllowRotationDefaultValue;
-import static com.android.launcher3.util.SecureSettingsObserver.newNotificationSettingsObserver;
-
-import static co.aospa.launcher.OverlayCallbackImpl.KEY_ENABLE_MINUS_ONE;
-
-import android.app.Activity;
-import android.app.ActivityManager;
+import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
@@ -51,32 +46,38 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.android.launcher3.LauncherFiles;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
-import com.android.launcher3.config.FeatureFlags;
-import com.android.launcher3.aospa.icon.IconPackStore;
 import com.android.launcher3.aospa.icon.IconPackSettingsActivity;
+import com.android.launcher3.aospa.icon.IconPackStore;
+import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.uioverrides.plugins.PluginManagerWrapper;
 import com.android.launcher3.util.SecureSettingsObserver;
+
+import static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS;
+import static co.aospa.launcher.OverlayCallbackImpl.KEY_ENABLE_MINUS_ONE;
+import static com.android.launcher3.SessionCommitReceiver.ADD_ICON_PREFERENCE_KEY;
+import static com.android.launcher3.states.RotationHelper.ALLOW_ROTATION_PREFERENCE_KEY;
+import static com.android.launcher3.states.RotationHelper.getAllowRotationDefaultValue;
+import static com.android.launcher3.util.SecureSettingsObserver.newNotificationSettingsObserver;
 
 /**
  * Settings activity for Launcher. Currently implements the following setting: Allow rotation
  */
 public class SettingsActivity extends FragmentActivity
         implements OnPreferenceStartFragmentCallback, OnPreferenceStartScreenCallback,
-        SharedPreferences.OnSharedPreferenceChangeListener{
-
-    private static final String DEVELOPER_OPTIONS_KEY = "pref_developer_options";
-    private static final String FLAGS_PREFERENCE_KEY = "flag_toggler";
-
-    private static final String NOTIFICATION_DOTS_PREFERENCE_KEY = "pref_icon_badging";
-    /** Hidden field Settings.Secure.ENABLED_NOTIFICATION_LISTENERS */
-    private static final String NOTIFICATION_ENABLED_LISTENERS = "enabled_notification_listeners";
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     public static final String EXTRA_FRAGMENT_ARG_KEY = ":settings:fragment_args_key";
     public static final String EXTRA_SHOW_FRAGMENT_ARGS = ":settings:show_fragment_args";
-    private static final int DELAY_HIGHLIGHT_DURATION_MILLIS = 600;
     public static final String SAVE_HIGHLIGHTED_KEY = "android:preference_highlighted";
-
     public static final String KEY_ICON_PACK = "pref_icon_pack";
+    private static final String DEVELOPER_OPTIONS_KEY = "pref_developer_options";
+    private static final String FLAGS_PREFERENCE_KEY = "flag_toggler";
+    private static final String NOTIFICATION_DOTS_PREFERENCE_KEY = "pref_icon_badging";
+    /**
+     * Hidden field Settings.Secure.ENABLED_NOTIFICATION_LISTENERS
+     */
+    private static final String NOTIFICATION_ENABLED_LISTENERS = "enabled_notification_listeners";
+    private static final int DELAY_HIGHLIGHT_DURATION_MILLIS = 600;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,12 +96,29 @@ public class SettingsActivity extends FragmentActivity
             f.setArguments(args);
             // Display the fragment as the main content.
             fm.beginTransaction().replace(android.R.id.content, f).commit();
+
+            View actionBarView = getLayoutInflater().inflate(R.layout.actionbar, null);
+            TextView titleText = actionBarView.findViewById(R.id.actionBar);
+            titleText.setText(R.string.settings_button_text);
+            ActionBar actionBar = getActionBar();
+            if (actionBar != null) {
+                actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+                actionBar.setCustomView(actionBarView,
+                        new ActionBar.LayoutParams(LayoutParams.WRAP_CONTENT,
+                                LayoutParams.FILL_PARENT,
+                                Gravity.CENTER));
+                actionBar.setDisplayHomeAsUpEnabled(true);
+                actionBar.setBackgroundDrawable(new ColorDrawable(0));
+                actionBar.setElevation(0f);
+                return;
+            }
         }
         Utilities.getPrefs(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) { }
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+    }
 
     private boolean startFragment(String fragment, Bundle args, String key) {
         if (Utilities.ATLEAST_P && getSupportFragmentManager().isStateSaved()) {
@@ -138,14 +156,19 @@ public class SettingsActivity extends FragmentActivity
     public static class LauncherSettingsFragment extends PreferenceFragmentCompat implements
             SharedPreferences.OnSharedPreferenceChangeListener {
 
+        protected static final String GSA_PACKAGE = "com.google.android.googlequicksearchbox";
         private SecureSettingsObserver mNotificationDotsObserver;
-
         private String mHighLightKey;
         private boolean mPreferenceHighlighted = false;
-
-        protected static final String GSA_PACKAGE = "com.google.android.googlequicksearchbox";
-
         private Preference mShowGoogleAppPref;
+
+        public static boolean isGSAEnabled(Context context) {
+            try {
+                return context.getPackageManager().getApplicationInfo(GSA_PACKAGE, 0).enabled;
+            } catch (PackageManager.NameNotFoundException e) {
+                return false;
+            }
+        }
 
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -169,9 +192,9 @@ public class SettingsActivity extends FragmentActivity
         }
 
         @Override
-        public void onDestroyView () {
+        public void onDestroyView() {
             Utilities.getPrefs(getContext())
-                .unregisterOnSharedPreferenceChangeListener(this);
+                    .unregisterOnSharedPreferenceChangeListener(this);
             super.onDestroyView();
         }
 
@@ -193,10 +216,8 @@ public class SettingsActivity extends FragmentActivity
 
         @Override
         public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-            switch (key) {
-                case IconPackStore.KEY_ICON_PACK:
-                    updatePreferences();
-                    break;
+            if (IconPackStore.KEY_ICON_PACK.equals(key)) {
+                updatePreferences();
             }
         }
 
@@ -258,14 +279,6 @@ public class SettingsActivity extends FragmentActivity
             }
 
             return true;
-        }
-
-        public static boolean isGSAEnabled(Context context) {
-            try {
-                return context.getPackageManager().getApplicationInfo(GSA_PACKAGE, 0).enabled;
-            } catch (PackageManager.NameNotFoundException e) {
-                return false;
-            }
         }
 
         private void updateIsGoogleAppEnabled() {
