@@ -16,6 +16,24 @@
       "message": "I like the idea.",
       "revId": "79c2b89f0e853cd2e646cf4eb86174ecc689fd99",
       "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba09b216_75c01dc1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000447
+      },
+      "writtenOn": "2021-04-23T02:57:14Z",
+      "side": 1,
+      "message": "Likewise",
+      "parentUuid": "b59c2d16_0c840e1e",
+      "revId": "79c2b89f0e853cd2e646cf4eb86174ecc689fd99",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
     }
   ]
 }
