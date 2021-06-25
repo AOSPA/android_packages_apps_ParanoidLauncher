@@ -33,6 +33,42 @@
       "message": "Brings back the lag with blur on some devices which I described in the original commit",
       "revId": "ab0e2276b94bcec40f4798891560a00d4f71dd81",
       "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "513be594_5284bbeb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000579
+      },
+      "writtenOn": "2021-06-25T04:25:56Z",
+      "side": 1,
+      "message": "better than having broken blur on devices that do support it",
+      "parentUuid": "4c16a026_37bf9dfb",
+      "revId": "ab0e2276b94bcec40f4798891560a00d4f71dd81",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "434ac0f7_01501b9d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000579
+      },
+      "writtenOn": "2021-06-25T04:25:56Z",
+      "side": 1,
+      "message": "can you tell me how to reproduce it? the steps I used in screen rec are fine",
+      "parentUuid": "19beaf3f_5e67be1c",
+      "revId": "ab0e2276b94bcec40f4798891560a00d4f71dd81",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
     }
   ]
 }
