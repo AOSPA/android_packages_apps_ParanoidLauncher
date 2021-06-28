@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea3f62c5_09a787c2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000579
+      },
+      "writtenOn": "2021-06-28T13:01:58Z",
+      "side": 1,
+      "message": "+1 on this PS, can\u0027t seems to easily break blur anymore, will let you know if I find anything else",
+      "revId": "79e59891efe916222e529d3b3bb4bba9706684b5",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
